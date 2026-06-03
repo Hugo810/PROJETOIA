@@ -1,0 +1,30 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+hs_err_pid*
+.recommenders/
+
+# Node / Angular
+frontend/node_modules/
+frontend/.angular/
+frontend/dist/
+frontend/.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+bin/
+
+# OS
+Thumbs.db
+.DS_Store
+*.swp
+*~

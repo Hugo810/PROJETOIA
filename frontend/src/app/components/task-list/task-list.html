@@ -1,0 +1,209 @@
+<div class="container">
+  <header>
+    <h2 class="page-title">Tarefas</h2>
+  </header>
+
+  <section class="filtros">
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchInput()"
+        placeholder="Buscar tarefa..."
+      />
+    </div>
+
+    <select [(ngModel)]="filtroStatus" (change)="filtrar()">
+      <option value="">Todos os status</option>
+      <option value="PENDENTE">Pendente</option>
+      <option value="EM_EXECUCAO">Em Execução</option>
+      <option value="CONCLUIDA">Concluída</option>
+    </select>
+
+    <select [(ngModel)]="filtroCategoria" (change)="filtrar()">
+      <option [ngValue]="null">Todas as categorias</option>
+      @for (cat of categorias; track cat.id) {
+        <option [ngValue]="cat.id">{{ cat.nome }}</option>
+      }
+    </select>
+
+    <button class="btn btn-secondary" (click)="limparFiltros()">Limpar</button>
+    <a routerLink="/nova" class="btn btn-primary">Nova Tarefa</a>
+  </section>
+
+  <section class="filtros-rapidos">
+    <button
+      class="btn-filtro-rapido"
+      [class.active]="filtroRapido === 'todas'"
+      (click)="setFiltroRapido('todas')"
+    >Todas</button>
+    <button
+      class="btn-filtro-rapido"
+      [class.active]="filtroRapido === 'minhas'"
+      (click)="setFiltroRapido('minhas')"
+    >Minhas tarefas</button>
+    <button
+      class="btn-filtro-rapido"
+      [class.active]="filtroRapido === 'atrasadas'"
+      (click)="setFiltroRapido('atrasadas')"
+    >Atrasadas</button>
+    <button
+      class="btn-filtro-rapido"
+      [class.active]="filtroRapido === 'semana'"
+      (click)="setFiltroRapido('semana')"
+    >Esta semana</button>
+  </section>
+
+  @if (hasSelection) {
+    <section class="acoes-massa">
+      <span class="selected-count">{{ selectedIds.size }} selecionada(s)</span>
+      <div class="massa-actions">
+        @if (podeConcluirSelecao) {
+          <button class="btn btn-sm btn-success" (click)="concluirSelecionadas()" [disabled]="bulkLoading">Concluir selecionadas</button>
+        }
+        @if (podeExcluirSelecao) {
+          <button class="btn btn-sm btn-danger" (click)="confirmarExclusaoSelecionadas()" [disabled]="bulkLoading">Excluir selecionadas</button>
+        }
+        <button class="btn btn-sm btn-secondary" (click)="selectedIds.clear(); selectAll = false" [disabled]="bulkLoading">Cancelar</button>
+      </div>
+    </section>
+  }
+
+  <section class="task-grid">
+    @if (tarefasExibidas.length === 0) {
+      <div class="empty">Nenhuma tarefa encontrada.</div>
+    }
+
+    @for (tarefa of tarefasExibidas; track tarefa.id) {
+      <div
+        class="task-card"
+        [class.concluida]="tarefa.status === 'CONCLUIDA'"
+        [class.urgente]="tarefa.categoriaNome === 'URGENTE'"
+        [class.selecionada]="isSelected(tarefa.id!)"
+        [class.urgencia-alta]="getUrgenciaClass(tarefa) === 'urgencia-alta'"
+        [class.urgencia-media]="getUrgenciaClass(tarefa) === 'urgencia-media'"
+      >
+        <div class="card-header">
+          <div class="card-header-left">
+            <label class="checkbox-wrapper" (click)="$event.stopPropagation()">
+              <input
+                type="checkbox"
+                [checked]="isSelected(tarefa.id!)"
+                (change)="toggleSelect(tarefa.id!)"
+              />
+              <span class="checkmark"></span>
+            </label>
+            <span class="categoria-badge" [class.badge-urgente]="tarefa.categoriaNome === 'URGENTE'" title="Categoria: {{ tarefa.categoriaNome }}">
+              {{ tarefa.categoriaNome }}
+            </span>
+          </div>
+          <span class="status-badge {{ getStatusClass(tarefa.status) }}" title="Status: {{ tarefa.status === 'CONCLUIDA' ? 'Concluída' : tarefa.status === 'EM_EXECUCAO' ? 'Em Execução' : 'Pendente' }}">
+            {{ tarefa.status === 'CONCLUIDA' ? 'Concluída' : tarefa.status === 'EM_EXECUCAO' ? 'Em Execução' : 'Pendente' }}
+          </span>
+        </div>
+
+        <div class="card-body" (click)="toggleConcluir(tarefa)">
+          <h3 class="card-title" [class.tachado]="tarefa.status === 'CONCLUIDA'">{{ tarefa.titulo }}</h3>
+
+          @if (tarefa.descricao) {
+            <p class="card-desc" [class.tachado]="tarefa.status === 'CONCLUIDA'">{{ tarefa.descricao }}</p>
+          }
+        </div>
+
+        <div class="card-responsavel">
+          @if (tarefa.responsavelNome) {
+            <span class="responsavel-tag" [style.background]="getBadgeColor(tarefa.responsavelNome)" title="Responsável: {{ tarefa.responsavelNome }}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              {{ tarefa.responsavelNome }}
+            </span>
+          } @else {
+            <span class="responsavel-tag nao-atribuida" title="Sem responsável">Não atribuída</span>
+          }
+        </div>
+
+        <div class="card-footer">
+          <span class="prazo" [class.prazo-vencido]="getDiasPrazo(tarefa) !== null && getDiasPrazo(tarefa)! < 0 && tarefa.status !== 'CONCLUIDA'" [class.prazo-proximo]="getDiasPrazo(tarefa) !== null && getDiasPrazo(tarefa)! <= 3 && getDiasPrazo(tarefa)! >= 0 && tarefa.status !== 'CONCLUIDA'" title="Prazo: {{ tarefa.prazo }}">
+            @if (getDiasPrazo(tarefa) !== null && getDiasPrazo(tarefa)! <= 3 && tarefa.status !== 'CONCLUIDA') {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/></svg>
+            } @else {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            }
+            {{ tarefa.prazo }}
+          </span>
+
+          <div class="card-actions">
+            @if (tarefa.status !== 'CONCLUIDA') {
+              <label class="checkbox-done" (click)="$event.stopPropagation()" title="Marcar como concluída">
+                <input
+                  type="checkbox"
+                  [checked]="false"
+                  (change)="toggleConcluir(tarefa)"
+                  [disabled]="!podeConcluirTarefa(tarefa)"
+                />
+              </label>
+            }
+            @if (podeIniciarTarefa(tarefa)) {
+              <button class="btn-icon btn-iniciar" (click)="iniciar(tarefa.id!)" title="Iniciar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </button>
+            }
+            @if (podeConcluirTarefa(tarefa) && tarefa.status === 'EM_EXECUCAO') {
+              <button class="btn-icon btn-concluir" (click)="concluir(tarefa.id!)" title="Concluir">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            }
+            @if (podeDistribuir) {
+              <button class="btn-icon btn-distribuir" (click)="abrirDistribuir(tarefa)" title="Distribuir">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </button>
+            }
+            @if (podeEditarTarefa(tarefa)) {
+              <a [routerLink]="['/editar', tarefa.id]" class="btn-icon btn-editar" title="Editar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+            }
+            @if (podeExcluir) {
+              <button class="btn-icon btn-excluir" (click)="confirmarExclusao(tarefa.id!)" title="Excluir">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  @if (totalPages > 1) {
+    <section class="paginacao">
+      <button [disabled]="currentPage === 0" (click)="mudarPagina(currentPage - 1)">Anterior</button>
+      <span>Página {{ currentPage + 1 }} de {{ totalPages }}</span>
+      <button [disabled]="currentPage >= totalPages - 1" (click)="mudarPagina(currentPage + 1)">Próxima</button>
+    </section>
+  }
+</div>
+
+@if (showDeleteModal) {
+  <app-confirm-modal (confirm)="excluir()" (cancel)="cancelarExclusao()" />
+}
+
+@if (showDistribuirModal) {
+  <div class="modal-overlay" (click)="cancelarDistribuir()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Distribuir Tarefa</h2>
+      <div class="form-group">
+        <label for="responsavel">Selecione o usuário responsável</label>
+        <select id="responsavel" [(ngModel)]="distribuirUsuarioId">
+          <option [ngValue]="null" disabled>Selecione...</option>
+          @for (u of usuarios; track u.id) {
+            <option [ngValue]="u.id">{{ u.nome }} ({{ u.role }})</option>
+          }
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="distribuir()" [disabled]="!distribuirUsuarioId">Distribuir</button>
+        <button class="btn btn-secondary" (click)="cancelarDistribuir()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,68 @@
+=== ANALISE DE BUGS - TaskFlow ===
+Data: 03/06/2026
+
+======================================================================
+BUG 1: USUARIO pode criar tarefas (POST /api/tarefas sem auth)
+================================================================------
+Severidade: MEDIA
+Endpoint: POST /api/tarefas
+Descricao:
+  Qualquer usuario, incluindo USUARIO (role mais basica), pode criar
+  tarefas porque o endpoint POST /api/tarefas nao exige autenticacao
+  nem verificacao de role. Segundo a regra de negocios, apenas ADMIN
+  e DISTRIBUIDOR devem poder criar tarefas.
+Como reproduzir:
+  curl -X POST http://localhost:8080/api/tarefas \
+    -H "Content-Type: application/json" \
+    -d '{"titulo":"Test","categoriaId":1,"prazo":"2026-06-10"}'
+  (funciona mesmo sem header X-User-Id)
+
+======================================================================
+BUG 2: Erro de permissao retorna HTTP 400 em vez de 403
+================================================================------
+Severidade: BAIXA
+Descricao:
+  Quando um usuario tenta executar uma acao sem permissao, a API
+  retorna HTTP 400 (Bad Request) com mensagem "Acesso negado:
+  permissao insuficiente". O codigo correto deveria ser HTTP 403
+  (Forbidden).
+Como reproduzir:
+  Tentar editar tarefa como USUARIO (X-User-Id: 3):
+  PUT /api/tarefas/1 → HTTP 400 (deveria ser 403)
+
+======================================================================
+BUG 3: Sem protecao de rota no frontend (acesso direto a / sem login)
+======================================================================
+Severidade: ALTA
+Descricao:
+  O frontend nao tem rota de guard ou protecao. Se o usuario acessar
+  diretamente "/" sem estar logado, o componente task-list tenta
+  carregar, mostrando brevemente a pagina antes do redirect no
+  constructor. Melhor usar um guard de rota ou redirect automatico
+  via AppComponent.
+Como reproduzir:
+  Abrir http://localhost:4200/ sem estar logado → tela pisca antes
+  de redirecionar para /login
+
+======================================================================
+BUG 4: POST /api/tarefas nao registra distribuidorId
+======================================================================
+Severidade: BAIXA
+Descricao:
+  Quando ADMIN ou DISTRIBUIDOR cria uma tarefa, o campo distribuidorId
+  fica null porque o endpoint de criacao nao recebe o header X-User-Id.
+  Isso impede rastrear quem criou a tarefa.
+Como reproduzir:
+  Criar tarefa como ADMIN → distribuidorId fica null no retorno
+
+======================================================================
+BUG 5: Login sem tratamento de erro amigavel (erro generico)
+======================================================================
+Severidade: BAIXA
+Descricao:
+  Quando o login falha (email ou senha invalidos), o backend retorna
+  uma string de erro simples sem estrutura padrao. O frontend mostra
+  "Email ou senha invalidos." que funciona, mas o backend poderia
+  retornar um JSON padronizado.
+Como reproduzir:
+  POST /api/auth/login com credenciais invalidas → retorna erro generico

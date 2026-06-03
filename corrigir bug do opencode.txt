@@ -1,0 +1,53 @@
+=== CORREÇÃO DE BUG DO OPENCODE ===
+
+Data: 03/06/2026
+Projeto: C:\ProjetoTreinoIa
+
+ERRO ORIGINAL:
+  Error: 4 of 5 requests failed: Unexpected server error.
+  Affected startup requests: config.providers, provider.list, app.agents, config.get
+
+CAUSAS E CORREÇÕES:
+
+1. ERRO NA ESTRUTURA DO CONFIG (opencode.json)
+   Arquivo: .opencode/opencode.json
+
+   O campo "apiKey" estava no nível errado do JSON.
+   No schema do opencode, "apiKey" deve ficar DENTRO de "options".
+
+   ANTES (errado):
+   {
+     "provider": {
+       "openai": {
+         "apiKey": "{env:OPENAI_API_KEY}"     <-- nível incorreto
+       }
+     }
+   }
+
+   DEPOIS (correto):
+   {
+     "provider": {
+       "openai": {
+         "options": {
+           "apiKey": "{env:OPENAI_API_KEY}"   <-- dentro de "options"
+         }
+       }
+     }
+   }
+
+2. VARIÁVEL DE AMBIENTE NÃO DEFINIDA
+   A variável OPENAI_API_KEY não estava definida no sistema.
+   O opencode tenta ler {env:OPENAI_API_KEY} e falha se ela não existe.
+
+   Para definir (PowerShell):
+   [System.Environment]::SetEnvironmentVariable('OPENAI_API_KEY','sua-chave-aqui','User')
+
+   Ou pelo terminal antes de rodar opencode:
+   $env:OPENAI_API_KEY = 'sua-chave-aqui'
+   opencode --port 40106
+
+RESUMO:
+- Bug 1: apiKey posicionado no local errado do JSON (fora de "options")
+- Bug 2: OPENAI_API_KEY não definida como variável de ambiente
+
+Ambos os bugs foram corrigidos.
