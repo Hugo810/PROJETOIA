@@ -283,6 +283,7 @@ export class TaskList implements OnInit {
   }
 
   podeEditarTarefa(t: Tarefa): boolean {
+    if (t.status === 'CONCLUIDA') return false;
     return this.auth.temRole('ADMIN', 'DISTRIBUIDOR');
   }
 

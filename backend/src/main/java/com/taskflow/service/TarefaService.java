@@ -77,6 +77,9 @@ public class TarefaService {
         usuarioService.validarRole(distribuidorId, com.taskflow.model.UsuarioRole.DISTRIBUIDOR);
         Tarefa tarefa = tarefaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tarefa nao encontrada: " + id));
+        if (tarefa.getStatus() == TarefaStatus.CONCLUIDA) {
+            throw new RuntimeException("Nao e possivel distribuir uma tarefa concluida");
+        }
         Usuario responsavel = usuarioService.findEntityById(responsavelId);
         tarefa.setResponsavel(responsavel);
         tarefa.setDistribuidorId(distribuidorId);
@@ -89,6 +92,9 @@ public class TarefaService {
         usuarioService.validarRole(usuarioId, com.taskflow.model.UsuarioRole.DISTRIBUIDOR);
         Tarefa tarefa = tarefaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tarefa nao encontrada: " + id));
+        if (tarefa.getStatus() == TarefaStatus.CONCLUIDA) {
+            throw new RuntimeException("Nao e possivel editar uma tarefa concluida");
+        }
 
         tarefa.setTitulo(dto.getTitulo());
         tarefa.setDescricao(dto.getDescricao());

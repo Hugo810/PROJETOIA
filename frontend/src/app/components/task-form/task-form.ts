@@ -52,6 +52,10 @@ export class TaskForm implements OnInit {
       this.editando = true;
       this.tarefaId = +id;
       this.taskService.buscarTarefa(this.tarefaId).subscribe(data => {
+        if (data.status === 'CONCLUIDA') {
+          this.router.navigate(['/']);
+          return;
+        }
         this.form.patchValue({
           titulo: data.titulo,
           descricao: data.descricao,
