@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  oracle:
+    image: gvenzl/oracle-free:21
+    container_name: taskflow-oracle
+    environment:
+      ORACLE_PASSWORD: taskflow
+      APP_USER: taskflow
+      APP_USER_PASSWORD: taskflow
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "taskflow/taskflow@//localhost:1521/FREE"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  oracle_data:

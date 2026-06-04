@@ -1,0 +1,157 @@
+=== BUGS RESOLVIDOS - TaskFlow ===
+Data: 03/06/2026
+
+Este arquivo deve ser lido e analisado sempre que for solicitada
+uma correcao de bug, para garantir que os mesmos erros nao sejam
+ reintroduzidos.
+
+======================================================================
+BUG 1: USUARIO conseguia criar tarefas (falta de auth no POST)
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - backend/.../controller/TarefaController.java
+  - backend/.../service/TarefaService.java
+  - backend/.../test/.../TarefaServiceTest.java
+  - backend/.../test/.../TarefaControllerTest.java
+
+O que foi feito:
+  - Adicionado parametro @RequestHeader("X-User-Id") no metodo
+    criar() do TarefaController
+  - TarefaService.criar() agora recebe usuarioId, validaRole()
+    para DISTRIBUIDOR e registra distribuidorId na tarefa
+  - Testes atualizados para refletir a nova assinatura
+
+======================================================================
+BUG 2: Erro de permissao retornava HTTP 400 em vez de 403
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - backend/.../config/AccessDeniedException.java (NOVO)
+  - backend/.../config/GlobalExceptionHandler.java
+  - backend/.../service/UsuarioService.java
+
+O que foi feito:
+  - Criada excecao customizada AccessDeniedException
+  - UsuarioService.validarRole() lanca AccessDeniedException
+    em vez de RuntimeException para erros de permissao
+  - GlobalExceptionHandler trata AccessDeniedException com
+    HTTP 403 (Forbidden) e demais RuntimeException com 400
+
+======================================================================
+BUG 3: Frontend sem protecao de rota (pagina piscava antes do redirect)
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - frontend/.../app.ts
+  - frontend/.../task-list/task-list.ts
+
+O que foi feito:
+  - AppComponent agora implementa OnInit e verifica autenticacao
+    antes de renderizar qualquer rota
+  - Se nao estiver logado e nao estiver em /login → redireciona
+  - Se estiver logado e estiver em /login → redireciona para /
+  - TaskList.removeu o check do constructor (agora centralizado)
+
+======================================================================
+BUG 4: POST /api/tarefas nao registrava distribuidorId
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - backend/.../controller/TarefaController.java
+  - backend/.../service/TarefaService.java
+
+O que foi feito:
+  - Criar tarefa agora registra distribuidorId a partir do
+    header X-User-Id, permitindo rastrear quem criou a tarefa
+  (Corrigido junto com Bug 1)
+
+======================================================================
+BUG 5: Login sem tratamento de erro amigavel (erro generico)
+======================================================================
+Status: NAO CORRIGIDO (baixa prioridade)
+Observacao:
+  O frontend ja trata o erro com mensagem amigavel ("Email ou
+  senha invalidos."). O backend retorna erro em formato JSON
+  padrao {"erro":"mensagem"}. Pode ser melhorado no futuro com
+   mensagens internacionalizadas, mas nao impede funcionamento.
+
+======================================================================
+BUG 6: X-User-Id vazio causava 400 ao listar usuarios (e em outras chamadas)
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - frontend/.../services/usuario.service.ts
+  - frontend/.../services/task.service.ts
+  - frontend/.../usuario-list/usuario-list.ts
+
+O que foi feito:
+  - getHeaders() mudou de HttpHeaders para objeto literal
+    Record<string, string> ({ 'X-User-Id': user.id.toString() }
+    ou {} se usuario for null)
+  - HttpClient do Angular 21 com withFetch() nao serializava
+    HttpHeaders corretamente no fetch do navegador; objeto
+    literal e convertido diretamente para Headers do fetch API
+  - UsuarioList.ngOnInit() verifica autenticacao antes de chamar
+    listar(); se nao estiver logado, redireciona para /login
+  - TaskService.criarTarefa() agora inclui header X-User-Id
+    (estava omitido, causando 400 ao criar tarefa)
+
+Regra documentada:
+  Todo service que depender de X-User-Id deve usar getHeaders()
+  retornando Record<string, string> (objeto literal), nao
+  HttpHeaders, para compatibilidade com withFetch() do Angular 21.
+  Toda rota que fizer chamada autenticada deve verificar
+  autenticacao antes de chamar o servico.
+
+======================================================================
+BUG 7: Redirecionamento com router.navigate() nao funcionava em subscribe
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - frontend/.../app.ts
+  - frontend/.../usuario-list/usuario-list.ts
+
+O que foi feito:
+  - Substituido router.navigate() por window.location.href em todos
+    os redirects de autenticacao (AppComponent e UsuarioList)
+  - router.navigate() as vezes nao completa a navegacao quando
+    chamado dentro de callbacks de subscribe(), deixando o usuario
+    na pagina atual com dados vazios
+  - window.location.href força reload completo da pagina,
+    garantindo que o estado seja resetado
+
+======================================================================
+BUG 8: Duplicate email retornava exception Hibernate crua
+======================================================================
+Status: RESOLVIDO
+Arquivos alterados:
+  - backend/.../config/GlobalExceptionHandler.java
+
+O que foi feito:
+  - Adicionado handler para DataIntegrityViolationException que
+    retorna "Email ja cadastrado." (HTTP 400) em vez da exception
+    SQL/Hibernate completa
+  - Tratamento generico para violacoes de unique constraint
+
+Regra documentada:
+  Toda exception de banco (DataIntegrityViolationException) deve
+  ser tratada com mensagem amigavel, nunca expor SQL/Hibernate.
+  Adicionar handler especifico para cada constraint conhecida.
+
+======================================================================
+TEST DATA - 03/06/2026
+======================================================================
+Usuarios inseridos via API (backend rodando):
+  1 ADMIN  - Admin / admin@taskflow.com
+  2 DISTRIBUIDOR - Distribuidor / dist@taskflow.com
+                  Distribuidor 2 / dist2@taskflow.com
+  9 USUARIO - Usuario / user@taskflow.com
+              Usuario 1-7 / user1-7@taskflow.com
+              Teste Final / testefinal@taskflow.com
+  Total: 12 usuarios
+
+Roles:
+  ADMIN       → tudo (CRUD usuarios, CRUD tarefas, distribuir, excluir)
+  DISTRIBUIDOR → criar tarefas, distribuir, concluir qualquer
+  USUARIO     → apenas executar tarefas proprias

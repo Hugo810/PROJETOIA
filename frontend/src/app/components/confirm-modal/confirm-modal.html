@@ -1,0 +1,9 @@
+<div class="modal-overlay" (click)="cancel.emit()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <p>{{ message }}</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" (click)="confirm.emit()">Confirmar</button>
+      <button class="btn btn-secondary" (click)="cancel.emit()">Cancelar</button>
+    </div>
+  </div>
+</div>

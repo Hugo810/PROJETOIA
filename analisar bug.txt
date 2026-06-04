@@ -1,0 +1,156 @@
+=== ANALISE DE BUGS - TaskFlow ===
+Data: 03/06/2026
+
+======================================================================
+BUG 1: USUARIO pode criar tarefas (POST /api/tarefas sem auth)
+================================================================------
+Severidade: MEDIA
+Endpoint: POST /api/tarefas
+Descricao:
+  Qualquer usuario, incluindo USUARIO (role mais basica), pode criar
+  tarefas porque o endpoint POST /api/tarefas nao exige autenticacao
+  nem verificacao de role. Segundo a regra de negocios, apenas ADMIN
+  e DISTRIBUIDOR devem poder criar tarefas.
+Como reproduzir:
+  curl -X POST http://localhost:8080/api/tarefas \
+    -H "Content-Type: application/json" \
+    -d '{"titulo":"Test","categoriaId":1,"prazo":"2026-06-10"}'
+  (funciona mesmo sem header X-User-Id)
+
+======================================================================
+BUG 2: Erro de permissao retorna HTTP 400 em vez de 403
+================================================================------
+Severidade: BAIXA
+Descricao:
+  Quando um usuario tenta executar uma acao sem permissao, a API
+  retorna HTTP 400 (Bad Request) com mensagem "Acesso negado:
+  permissao insuficiente". O codigo correto deveria ser HTTP 403
+  (Forbidden).
+Como reproduzir:
+  Tentar editar tarefa como USUARIO (X-User-Id: 3):
+  PUT /api/tarefas/1 → HTTP 400 (deveria ser 403)
+
+======================================================================
+BUG 3: Sem protecao de rota no frontend (acesso direto a / sem login)
+======================================================================
+Severidade: ALTA
+Descricao:
+  O frontend nao tem rota de guard ou protecao. Se o usuario acessar
+  diretamente "/" sem estar logado, o componente task-list tenta
+  carregar, mostrando brevemente a pagina antes do redirect no
+  constructor. Melhor usar um guard de rota ou redirect automatico
+  via AppComponent.
+Como reproduzir:
+  Abrir http://localhost:4200/ sem estar logado → tela pisca antes
+  de redirecionar para /login
+
+======================================================================
+BUG 4: POST /api/tarefas nao registra distribuidorId
+======================================================================
+Severidade: BAIXA
+Descricao:
+  Quando ADMIN ou DISTRIBUIDOR cria uma tarefa, o campo distribuidorId
+  fica null porque o endpoint de criacao nao recebe o header X-User-Id.
+  Isso impede rastrear quem criou a tarefa.
+Como reproduzir:
+  Criar tarefa como ADMIN → distribuidorId fica null no retorno
+
+======================================================================
+BUG 5: Login sem tratamento de erro amigavel (erro generico)
+======================================================================
+Severidade: BAIXA
+Descricao:
+  Quando o login falha (email ou senha invalidos), o backend retorna
+  uma string de erro simples sem estrutura padrao. O frontend mostra
+  "Email ou senha invalidos." que funciona, mas o backend poderia
+  retornar um JSON padronizado.
+Como reproduzir:
+  POST /api/auth/login com credenciais invalidas → retorna erro generico
+
+======================================================================
+BUG 6: LOGIN CASE-SENSITIVE (CORRIGIDO)
+======================================================================
+Severidade: ALTA (corrigida)
+  Backend: UsuarioRepository agora usa LOWER(u.email) = LOWER(:email)
+  Frontend: envia email como digitado (sem toUpperCase)
+
+======================================================================
+BUG 7: CHANGE DETECTION NÃO ATUALIZAVA ERRO NO LOGIN (CORRIGIDO)
+======================================================================
+Severidade: ALTA (corrigida)
+  Angular 21 não re-renderizava template após erro HTTP.
+  Solução: ChangeDetectorRef.detectChanges() após setar mensagem.
+
+======================================================================
+BUG 8: NAVBAR SUMIA APÓS LOGIN (CORRIGIDO)
+======================================================================
+Severidade: ALTA (corrigida)
+  App.isLogado só era true após reload. AuthService ganhou
+  BehaviorSubject para estado reativo.
+
+======================================================================
+BUG 9: VALIDAÇÃO NATIVA DO BROWSER BLOQUEAVA SUBMIT (CORRIGIDO)
+======================================================================
+Severidade: MÉDIA (corrigida)
+  type="email" + required no HTML impediam submit sem feedback.
+  Solução: novalidate no form.
+
+======================================================================
+BUG 10: SEM VALIDAÇÃO FRONTEND DE CAMPOS VAZIOS (CORRIGIDO)
+======================================================================
+Severidade: MÉDIA (corrigida)
+  entrar() não verificava preenchimento. Adicionado if + mensagem.
+
+======================================================================
+BUG 11: MENSAGEM DE ERRO SEM TIMEOUT (CORRIGIDO)
+======================================================================
+Severidade: BAIXA (corrigida)
+  setTimeout 30s + (focus) limpa na hora.
+
+======================================================================
+BUG 12: ROTA INICIAL REDIRECIONAVA COM FLASH (CORRIGIDO)
+======================================================================
+Severidade: ALTA (corrigida)
+  '' agora redireciona para /login via Angular router (sem flash).
+  TaskList movido para /tarefas. 8 arquivos alterados.
+
+======================================================================
+BUG 13: TESTES ANTIGOS NÃO FAZIAM LOGIN (CORRIGIDO)
+======================================================================
+Severidade: MÉDIA (corrigida)
+  Adicionado login() helper no taskflow.spec.ts.
+
+======================================================================
+BUG 14: TÍTULO UPPERCASE NÃO CASHAVA EM TESTES (CORRIGIDO)
+======================================================================
+Severidade: BAIXA (corrigida)
+  toContainText com string é case-sensitive. Usado RegExp /i.
+
+======================================================================
+BUG 15: TAREFA NOVA FICAVA NA PÁGINA 2 (CORRIGIDO)
+======================================================================
+Severidade: MÉDIA (corrigida)
+  pageSize=12 + seed com 12 tarefas. findTaskCard() navega páginas.
+
+======================================================================
+BUG 16: BOTÕES DE AÇÃO COM ÍCONE SEM TEXTO (CORRIGIDO)
+======================================================================
+Severidade: MÉDIA (corrigida)
+  getByTitle() em vez de text= para localizar ícones Editar/Concluir/Excluir.
+
+======================================================================
+BUG 17: CONCLUIR SÓ APARECIA PARA EM_EXECUCAO (CORRIGIDO)
+======================================================================
+Severidade: BAIXA (corrigida)
+  Concluir via click no .card-body (toggleConcluir) em vez do botão.
+
+======================================================================
+NÃO CORRIGIDOS (PENDENTES):
+======================================================================
+- BUG 9 original: Senhas em plain text (sem BCrypt)
+- BUG 10 original: LoginRequest sem @Valid/@NotBlank
+- BUG 1 original: Usuario pode criar tarefa (POST sem auth)
+- BUG 2 original: Erro permissão retorna 400 em vez de 403
+- BUG 3 original: Sem proteção de rota no frontend (parcial: redirect funciona)
+- BUG 4 original: POST /api/tarefas não registra distribuidorId
+- BUG 5 original: Login sem tratamento de erro amigavel

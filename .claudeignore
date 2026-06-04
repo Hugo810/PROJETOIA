@@ -1,0 +1,53 @@
+# Dependências (evita 120K+ tokens desnecessários)
+node_modules/
+frontend/node_modules/
+frontend/.angular/
+backend/target/
+backend/.mvn/
+
+# Builds e distribuição
+dist/
+build/
+.out/
+*.log
+npm-debug.log*
+
+# Ambiente e secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.p8
+
+# Banco de dados H2 (arquivos locais)
+*.h2.db
+*.mv.db
+*.trace.db
+
+# IDEs (exceto .gitignore e .claudeignore)
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.DS_Store
+
+# Testes e coverage
+coverage/
+.nyc_output/
+test-results/
+*.testresults
+
+# Temp
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+
+# Logs do OpenCode
+.opencode/
+.claude/
+.claude.local
