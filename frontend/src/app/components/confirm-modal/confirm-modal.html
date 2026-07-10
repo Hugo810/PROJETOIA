@@ -2,8 +2,8 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <p>{{ message }}</p>
     <div class="modal-actions">
-      <button class="btn btn-danger" (click)="confirm.emit()">Confirmar</button>
-      <button class="btn btn-secondary" (click)="cancel.emit()">Cancelar</button>
+      <button class="btn" [class.btn-danger]="dangerMode" [class.btn-primary]="!dangerMode" (click)="confirm.emit()">{{ confirmText }}</button>
+      <button class="btn btn-secondary" (click)="cancel.emit()">{{ cancelText }}</button>
     </div>
   </div>
 </div>

@@ -1,5 +1,6 @@
 package com.taskflow.controller;
 
+import com.taskflow.dto.ResumoTarefasDTO;
 import com.taskflow.dto.TarefaDTO;
 import com.taskflow.service.TarefaService;
 import jakarta.validation.Valid;
@@ -7,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tarefas")
@@ -24,9 +27,36 @@ public class TarefaController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) Long responsavelId,
+            @RequestParam(required = false) String prioridade,
+            @RequestParam(required = false) String busca,
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "10") int tamanho) {
-        return ResponseEntity.ok(service.listar(status, categoriaId, responsavelId, pagina, tamanho));
+        return ResponseEntity.ok(service.listar(status, categoriaId, responsavelId, prioridade, busca, pagina, tamanho));
+    }
+
+    @GetMapping("/hoje")
+    public ResponseEntity<List<TarefaDTO>> hoje() {
+        return ResponseEntity.ok(service.tarefasHoje());
+    }
+
+    @GetMapping("/semana")
+    public ResponseEntity<List<TarefaDTO>> semana() {
+        return ResponseEntity.ok(service.tarefasSemana());
+    }
+
+    @GetMapping("/atrasadas")
+    public ResponseEntity<List<TarefaDTO>> atrasadas() {
+        return ResponseEntity.ok(service.tarefasAtrasadas());
+    }
+
+    @GetMapping("/proximas")
+    public ResponseEntity<List<TarefaDTO>> proximas() {
+        return ResponseEntity.ok(service.tarefasProximas());
+    }
+
+    @GetMapping("/resumo")
+    public ResponseEntity<ResumoTarefasDTO> resumo() {
+        return ResponseEntity.ok(service.resumo());
     }
 
     @GetMapping("/{id}")

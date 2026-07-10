@@ -30,8 +30,10 @@ export class TaskList implements OnInit {
 
   filtroStatus = '';
   filtroCategoria: number | null = null;
+  filtroPrioridade = '';
   filtroRapido: FiltroRapido = 'todas';
   searchTerm = '';
+  debounceTimer: any;
 
   selectedIds = new Set<number>();
   selectAll = false;
@@ -102,6 +104,11 @@ export class TaskList implements OnInit {
     return this.tarefasExibidas;
   }
 
+  get temFiltroAtivo(): boolean {
+    return !!(this.filtroStatus || this.filtroCategoria || this.filtroPrioridade ||
+              this.searchTerm || this.filtroRapido !== 'todas');
+  }
+
   carregarCategorias() {
     this.taskService.listarCategorias().subscribe(data => this.categorias = data);
   }
@@ -116,10 +123,12 @@ export class TaskList implements OnInit {
       this.filtroStatus || undefined,
       this.filtroCategoria || undefined,
       responsavelId,
+      this.filtroPrioridade || undefined,
+      this.searchTerm || undefined,
       this.currentPage,
       this.pageSize
     ).subscribe(page => {
-      this.tarefas = this.ordenarPorUrgencia(page.content);
+      this.tarefas = this.ordenarPorUrgenciaEPrioridade(page.content);
       this.totalPages = page.totalPages;
       this.aplicarFiltrosLocais();
       this.cdr.detectChanges();
@@ -151,16 +160,15 @@ export class TaskList implements OnInit {
       });
     }
 
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.trim().toLowerCase();
-      lista = lista.filter(t => t.titulo.toLowerCase().includes(term));
-    }
-
     this.tarefasExibidas = lista;
   }
 
   onSearchInput() {
-    this.aplicarFiltrosLocais();
+    clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+      this.currentPage = 0;
+      this.carregarTarefas();
+    }, 300);
   }
 
   setFiltroRapido(f: FiltroRapido) {
@@ -173,7 +181,6 @@ export class TaskList implements OnInit {
 
   getBadgeColor(nome: string): string {
     const cores = ['#e0e7ff', '#fce4ec', '#e8f5e9', '#fff3e0', '#f3e5f5', '#e0f7fa'];
-    const colors = ['#4361ee', '#c62828', '#2e7d32', '#e65100', '#7b1fa2', '#00838f'];
     let hash = 0;
     for (let i = 0; i < nome.length; i++) {
       hash = nome.charCodeAt(i) + ((hash << 5) - hash);
@@ -182,15 +189,20 @@ export class TaskList implements OnInit {
     return cores[idx];
   }
 
-  private ordenarPorUrgencia(tarefas: Tarefa[]): Tarefa[] {
+  private ordenarPorUrgenciaEPrioridade(tarefas: Tarefa[]): Tarefa[] {
+    const pesoPrioridade: Record<string, number> = { 'ALTA': 0, 'MEDIA': 1, 'BAIXA': 2 };
     return [...tarefas].sort((a, b) => {
-      const aUrg = this.getDiasPrazo(a);
-      const bUrg = this.getDiasPrazo(b);
-      const aNivel = aUrg !== null && aUrg <= 3 ? 0 : 1;
-      const bNivel = bUrg !== null && bUrg <= 3 ? 0 : 1;
-      if (aNivel !== bNivel) return aNivel - bNivel;
       if (a.status === 'CONCLUIDA' && b.status !== 'CONCLUIDA') return 1;
       if (a.status !== 'CONCLUIDA' && b.status === 'CONCLUIDA') return -1;
+      const aDias = this.getDiasPrazo(a);
+      const bDias = this.getDiasPrazo(b);
+      const aProximo = aDias !== null && aDias <= 3 && a.status !== 'CONCLUIDA';
+      const bProximo = bDias !== null && bDias <= 3 && b.status !== 'CONCLUIDA';
+      if (aProximo && !bProximo) return -1;
+      if (!aProximo && bProximo) return 1;
+      const aPeso = pesoPrioridade[a.prioridade || 'MEDIA'] ?? 1;
+      const bPeso = pesoPrioridade[b.prioridade || 'MEDIA'] ?? 1;
+      if (aPeso !== bPeso) return aPeso - bPeso;
       return a.prazo.localeCompare(b.prazo);
     });
   }
@@ -214,6 +226,18 @@ export class TaskList implements OnInit {
     return '';
   }
 
+  getPrioridadeClass(prioridade?: string): string {
+    if (prioridade === 'ALTA') return 'prioridade-alta';
+    if (prioridade === 'BAIXA') return 'prioridade-baixa';
+    return 'prioridade-media';
+  }
+
+  getPrioridadeLabel(prioridade?: string): string {
+    if (prioridade === 'ALTA') return 'Alta';
+    if (prioridade === 'BAIXA') return 'Baixa';
+    return 'Média';
+  }
+
   filtrar() {
     this.currentPage = 0;
     this.selectedIds.clear();
@@ -224,6 +248,7 @@ export class TaskList implements OnInit {
   limparFiltros() {
     this.filtroStatus = '';
     this.filtroCategoria = null;
+    this.filtroPrioridade = '';
     this.filtroRapido = 'todas';
     this.searchTerm = '';
     this.filtrar();

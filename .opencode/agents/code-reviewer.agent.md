@@ -1,7 +1,9 @@
 ---
 name: code-reviewer
 description: Revisor de código que apenas lê, nunca modifica
-tools: Read, Grep, Glob
+---
+tools: [Read, Grep, Glob]
+---
 model: sonnet
 ---
 

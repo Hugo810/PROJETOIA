@@ -1,0 +1,306 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #1a1a2e;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn:hover { opacity: 0.85; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  border-radius: 12px;
+  background: white;
+  border: 2px solid #e8e8e8;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.stat-card.active {
+  border-color: #4361ee;
+  box-shadow: 0 0 0 3px rgba(67,97,238,0.15);
+}
+
+.stat-hoje.active { border-color: #4361ee; background: #f0f3ff; }
+.stat-semana.active { border-color: #2a9d8f; background: #f0faf8; }
+.stat-atrasadas.active { border-color: #e63946; background: #fef2f2; }
+.stat-proximas.active { border-color: #f4a261; background: #fef9f3; }
+
+.stat-numero {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.stat-icon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #ccc;
+}
+
+.stat-card.active .stat-icon { color: #4361ee; }
+.stat-hoje.active .stat-icon { color: #4361ee; }
+.stat-semana.active .stat-icon { color: #2a9d8f; }
+.stat-atrasadas.active .stat-icon { color: #e63946; }
+.stat-proximas.active .stat-icon { color: #f4a261; }
+
+.task-section h2 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  color: #1a1a2e;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #999;
+  font-size: 15px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  border: 1px dashed #ddd;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  transition: box-shadow 0.15s;
+}
+
+.task-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.task-item.concluida {
+  opacity: 0.55;
+}
+
+.task-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.check-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2e7d32;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.check-btn:hover {
+  border-color: #2e7d32;
+  background: #f0faf0;
+}
+
+.check-btn.pending {
+  color: #4361ee;
+  border-color: #4361ee;
+}
+
+.check-btn.pending:hover {
+  background: #f0f3ff;
+}
+
+.check-done {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2e7d32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.task-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.task-titulo {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.task-titulo.tachado {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.task-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.prioridade-badge {
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.prioridade-alta { background: #fce4ec; color: #c62828; }
+.prioridade-media { background: #fff3e0; color: #e65100; }
+.prioridade-baixa { background: #e8f5e9; color: #2e7d32; }
+
+.status-badge {
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.status-pendente { background: #fff3cd; color: #856404; }
+.status-execucao { background: #cce5ff; color: #004085; }
+.status-concluida { background: #d4edda; color: #155724; }
+
+.responsavel-tag {
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  color: white;
+  font-weight: 500;
+}
+
+.task-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.prazo {
+  font-size: 13px;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.prazo-vencido {
+  color: #e63946;
+  font-weight: 600;
+}
+
+.prazo-hoje {
+  color: #e65100;
+  font-weight: 600;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: #999;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.btn-icon:hover {
+  background: #f0f0f0;
+  color: #4361ee;
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .container { padding: 16px; }
+  header h1 { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .task-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .task-right { width: 100%; justify-content: space-between; }
+}

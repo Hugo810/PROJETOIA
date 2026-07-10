@@ -44,17 +44,31 @@
       </div>
     </div>
 
-    @if (podeDistribuir) {
+    <div class="form-row">
       <div class="form-group">
-        <label for="responsavel">Responsável</label>
-        <select id="responsavel" formControlName="responsavelId">
-          <option [ngValue]="">Sem responsável</option>
-          @for (u of usuarios; track u.id) {
-            <option [ngValue]="u.id">{{ u.nome }} ({{ u.role === 'ADMIN' ? 'Admin' : u.role === 'DISTRIBUIDOR' ? 'Distribuidor' : 'Executor' }})</option>
-          }
+        <label for="prioridade">Prioridade *</label>
+        <select id="prioridade" formControlName="prioridade">
+          <option value="BAIXA">Baixa</option>
+          <option value="MEDIA">Média</option>
+          <option value="ALTA">Alta</option>
         </select>
+        @if (getError('prioridade')) {
+          <small class="field-error">{{ getError('prioridade') }}</small>
+        }
       </div>
-    }
+
+      @if (podeDistribuir) {
+        <div class="form-group">
+          <label for="responsavel">Responsável</label>
+          <select id="responsavel" formControlName="responsavelId">
+            <option [ngValue]="">Sem responsável</option>
+            @for (u of usuarios; track u.id) {
+              <option [ngValue]="u.id">{{ u.nome }} ({{ u.role === 'ADMIN' ? 'Admin' : u.role === 'DISTRIBUIDOR' ? 'Distribuidor' : 'Executor' }})</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
@@ -63,4 +77,12 @@
       <a routerLink="/" class="btn btn-secondary">Cancelar</a>
     </div>
   </form>
+
+  @if (editando && tarefaId) {
+    <div class="collaboration-section">
+      <app-task-timer [tarefaId]="tarefaId"></app-task-timer>
+      <app-task-comments [tarefaId]="tarefaId"></app-task-comments>
+      <app-task-history [tarefaId]="tarefaId"></app-task-history>
+    </div>
+  }
 </div>

@@ -1,5 +1,6 @@
 package com.taskflow.controller;
 
+import com.taskflow.dto.ResumoTarefasDTO;
 import com.taskflow.dto.TarefaDTO;
 import com.taskflow.service.TarefaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +51,7 @@ class TarefaControllerTest {
         Page<TarefaDTO> page = new PageImpl<>(List.of(
                 criarTarefaDTO(1L, "Tarefa 1", "PENDENTE")
         ));
-        when(service.listar(any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
+        when(service.listar(any(), any(), any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
 
         mockMvc.perform(get("/api/tarefas"))
                 .andExpect(status().isOk())
@@ -62,7 +63,7 @@ class TarefaControllerTest {
         Page<TarefaDTO> page = new PageImpl<>(List.of(
                 criarTarefaDTO(1L, "Tarefa Pendente", "PENDENTE")
         ));
-        when(service.listar(eq("PENDENTE"), any(), any(), anyInt(), anyInt())).thenReturn(page);
+        when(service.listar(eq("PENDENTE"), any(), any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
 
         mockMvc.perform(get("/api/tarefas?status=PENDENTE"))
                 .andExpect(status().isOk())
@@ -74,7 +75,7 @@ class TarefaControllerTest {
         Page<TarefaDTO> page = new PageImpl<>(List.of(
                 criarTarefaDTO(1L, "Tarefa Trabalho", "PENDENTE")
         ));
-        when(service.listar(any(), eq(1L), any(), anyInt(), anyInt())).thenReturn(page);
+        when(service.listar(any(), eq(1L), any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
 
         mockMvc.perform(get("/api/tarefas?categoriaId=1"))
                 .andExpect(status().isOk())
@@ -178,5 +179,59 @@ class TarefaControllerTest {
         mockMvc.perform(delete("/api/tarefas/1")
                         .header("X-User-Id", "1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deveListarTarefasHoje() throws Exception {
+        when(service.tarefasHoje()).thenReturn(List.of(criarTarefaDTO(1L, "Tarefa Hoje", "PENDENTE")));
+
+        mockMvc.perform(get("/api/tarefas/hoje"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].titulo").value("Tarefa Hoje"));
+    }
+
+    @Test
+    void deveListarTarefasSemana() throws Exception {
+        when(service.tarefasSemana()).thenReturn(List.of(criarTarefaDTO(1L, "Tarefa Semana", "PENDENTE")));
+
+        mockMvc.perform(get("/api/tarefas/semana"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].titulo").value("Tarefa Semana"));
+    }
+
+    @Test
+    void deveListarTarefasAtrasadas() throws Exception {
+        when(service.tarefasAtrasadas()).thenReturn(List.of(criarTarefaDTO(1L, "Tarefa Atrasada", "PENDENTE")));
+
+        mockMvc.perform(get("/api/tarefas/atrasadas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].titulo").value("Tarefa Atrasada"));
+    }
+
+    @Test
+    void deveListarTarefasProximas() throws Exception {
+        when(service.tarefasProximas()).thenReturn(List.of(criarTarefaDTO(1L, "Tarefa Proxima", "PENDENTE")));
+
+        mockMvc.perform(get("/api/tarefas/proximas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].titulo").value("Tarefa Proxima"));
+    }
+
+    @Test
+    void deveRetornarResumo() throws Exception {
+        ResumoTarefasDTO resumo = new ResumoTarefasDTO();
+        resumo.setHoje(List.of(criarTarefaDTO(1L, "Hoje", "PENDENTE")));
+        resumo.setContagemHoje(1);
+        resumo.setAtrasadas(List.of(criarTarefaDTO(2L, "Atrasada", "PENDENTE")));
+        resumo.setContagemAtrasadas(1);
+        resumo.setProximas(List.of());
+        resumo.setContagemProximas(0);
+        when(service.resumo()).thenReturn(resumo);
+
+        mockMvc.perform(get("/api/tarefas/resumo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contagemHoje").value(1))
+                .andExpect(jsonPath("$.contagemAtrasadas").value(1))
+                .andExpect(jsonPath("$.hoje[0].titulo").value("Hoje"));
     }
 }

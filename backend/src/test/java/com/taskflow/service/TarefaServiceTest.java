@@ -1,9 +1,12 @@
 package com.taskflow.service;
 
+import com.taskflow.dto.ResumoTarefasDTO;
 import com.taskflow.dto.TarefaDTO;
 import com.taskflow.model.Categoria;
 import com.taskflow.model.Tarefa;
 import com.taskflow.model.TarefaStatus;
+import com.taskflow.model.Usuario;
+import com.taskflow.model.UsuarioRole;
 import com.taskflow.repository.TarefaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,13 +37,22 @@ class TarefaServiceTest {
     @Mock
     private UsuarioService usuarioService;
 
+    @Mock
+    private HistoricoService historicoService;
+
+    @Mock
+    private NotificacaoService notificacaoService;
+
+    @Mock
+    private AutomacaoService automacaoService;
+
     private TarefaService service;
 
     private Categoria categoria;
 
     @BeforeEach
     void setUp() {
-        service = new TarefaService(tarefaRepository, categoriaService, usuarioService);
+        service = new TarefaService(tarefaRepository, categoriaService, usuarioService, historicoService, notificacaoService, automacaoService);
         categoria = new Categoria(1L, "TRABALHO");
     }
 
@@ -49,9 +61,9 @@ class TarefaServiceTest {
         Tarefa tarefa = criarTarefa(1L, "Tarefa 1", LocalDate.now().plusDays(1));
         Page<Tarefa> page = new PageImpl<>(List.of(tarefa));
 
-        when(tarefaRepository.findAllByOrderByPrazoAsc(any(PageRequest.class))).thenReturn(page);
+        when(tarefaRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class))).thenReturn(page);
 
-        Page<TarefaDTO> resultado = service.listar(null, null, null, 0, 10);
+        Page<TarefaDTO> resultado = service.listar(null, null, null, null, null, 0, 10);
 
         assertEquals(1, resultado.getContent().size());
         assertEquals("Tarefa 1", resultado.getContent().get(0).getTitulo());
@@ -62,10 +74,10 @@ class TarefaServiceTest {
         Tarefa tarefa = criarTarefa(1L, "Tarefa Pendente", LocalDate.now().plusDays(1));
         Page<Tarefa> page = new PageImpl<>(List.of(tarefa));
 
-        when(tarefaRepository.findByStatusOrderByPrazoAsc(eq(TarefaStatus.PENDENTE), any(PageRequest.class)))
+        when(tarefaRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
                 .thenReturn(page);
 
-        Page<TarefaDTO> resultado = service.listar("PENDENTE", null, null, 0, 10);
+        Page<TarefaDTO> resultado = service.listar("PENDENTE", null, null, null, null, 0, 10);
 
         assertEquals(1, resultado.getContent().size());
     }
@@ -75,10 +87,10 @@ class TarefaServiceTest {
         Tarefa tarefa = criarTarefa(1L, "Tarefa Trabalho", LocalDate.now().plusDays(1));
         Page<Tarefa> page = new PageImpl<>(List.of(tarefa));
 
-        when(tarefaRepository.findByCategoriaIdOrderByPrazoAsc(eq(1L), any(PageRequest.class)))
+        when(tarefaRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
                 .thenReturn(page);
 
-        Page<TarefaDTO> resultado = service.listar(null, 1L, null, 0, 10);
+        Page<TarefaDTO> resultado = service.listar(null, 1L, null, null, null, 0, 10);
 
         assertEquals(1, resultado.getContent().size());
     }
@@ -88,11 +100,10 @@ class TarefaServiceTest {
         Tarefa tarefa = criarTarefa(1L, "Tarefa", LocalDate.now().plusDays(1));
         Page<Tarefa> page = new PageImpl<>(List.of(tarefa));
 
-        when(tarefaRepository.findByStatusAndCategoriaIdOrderByPrazoAsc(
-                eq(TarefaStatus.PENDENTE), eq(1L), any(PageRequest.class)))
+        when(tarefaRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
                 .thenReturn(page);
 
-        Page<TarefaDTO> resultado = service.listar("PENDENTE", 1L, null, 0, 10);
+        Page<TarefaDTO> resultado = service.listar("PENDENTE", 1L, null, null, null, 0, 10);
 
         assertEquals(1, resultado.getContent().size());
     }
@@ -140,6 +151,9 @@ class TarefaServiceTest {
     void deveAtualizarTarefa() {
         doNothing().when(usuarioService).validarRole(anyLong(), any());
 
+        Usuario usuario = new Usuario(1L, "Admin", "admin@test.com", "123", UsuarioRole.ADMIN);
+        when(usuarioService.findEntityById(1L)).thenReturn(usuario);
+
         Tarefa tarefa = criarTarefa(1L, "Tarefa Antiga", LocalDate.now().plusDays(1));
         when(tarefaRepository.findById(1L)).thenReturn(Optional.of(tarefa));
         when(tarefaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -156,8 +170,26 @@ class TarefaServiceTest {
     }
 
     @Test
-    void deveConcluirTarefa() {
+    void deveIniciarTarefa() {
+        Usuario usuario = new Usuario(1L, "Admin", "admin@test.com", "123", UsuarioRole.ADMIN);
+        when(usuarioService.findEntityById(1L)).thenReturn(usuario);
+
         Tarefa tarefa = criarTarefa(1L, "Tarefa", LocalDate.now().plusDays(1));
+        when(tarefaRepository.findById(1L)).thenReturn(Optional.of(tarefa));
+        when(tarefaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        TarefaDTO resultado = service.iniciar(1L, 1L);
+
+        assertEquals("EM_EXECUCAO", resultado.getStatus());
+    }
+
+    @Test
+    void deveConcluirTarefa() {
+        Usuario usuario = new Usuario(1L, "Admin", "admin@test.com", "123", UsuarioRole.ADMIN);
+        when(usuarioService.findEntityById(1L)).thenReturn(usuario);
+
+        Tarefa tarefa = criarTarefa(1L, "Tarefa", LocalDate.now().plusDays(1));
+        tarefa.setStatus(TarefaStatus.EM_EXECUCAO);
         when(tarefaRepository.findById(1L)).thenReturn(Optional.of(tarefa));
         when(tarefaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -165,6 +197,14 @@ class TarefaServiceTest {
 
         assertEquals("CONCLUIDA", resultado.getStatus());
         assertNotNull(resultado.getDataConclusao());
+    }
+
+    @Test
+    void deveRejeitarConclusaoDireta() {
+        Tarefa tarefa = criarTarefa(1L, "Tarefa", LocalDate.now().plusDays(1));
+        when(tarefaRepository.findById(1L)).thenReturn(Optional.of(tarefa));
+
+        assertThrows(RuntimeException.class, () -> service.concluir(1L, 1L));
     }
 
     @Test
@@ -183,6 +223,66 @@ class TarefaServiceTest {
         when(tarefaRepository.existsById(99L)).thenReturn(false);
 
         assertThrows(RuntimeException.class, () -> service.excluir(99L, 1L));
+    }
+
+    @Test
+    void deveRetornarTarefasHoje() {
+        Tarefa tarefa = criarTarefa(1L, "Tarefa Hoje", LocalDate.now());
+        when(tarefaRepository.findByPrazo(LocalDate.now())).thenReturn(List.of(tarefa));
+
+        List<TarefaDTO> resultado = service.tarefasHoje();
+
+        assertEquals(1, resultado.size());
+        assertEquals("Tarefa Hoje", resultado.get(0).getTitulo());
+    }
+
+    @Test
+    void deveRetornarTarefasSemana() {
+        Tarefa tarefa = criarTarefa(1L, "Tarefa Semana", LocalDate.now().plusDays(3));
+        when(tarefaRepository.findByPrazoBetween(LocalDate.now(), LocalDate.now().plusDays(6)))
+                .thenReturn(List.of(tarefa));
+
+        List<TarefaDTO> resultado = service.tarefasSemana();
+
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void deveRetornarTarefasAtrasadas() {
+        Tarefa tarefa = criarTarefa(1L, "Tarefa Atrasada", LocalDate.now().minusDays(2));
+        when(tarefaRepository.findAtrasadas(LocalDate.now())).thenReturn(List.of(tarefa));
+
+        List<TarefaDTO> resultado = service.tarefasAtrasadas();
+
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void deveRetornarTarefasProximas() {
+        Tarefa tarefa = criarTarefa(1L, "Tarefa Proxima", LocalDate.now().plusDays(5));
+        when(tarefaRepository.findProximas(LocalDate.now().plusDays(1), LocalDate.now().plusDays(7)))
+                .thenReturn(List.of(tarefa));
+
+        List<TarefaDTO> resultado = service.tarefasProximas();
+
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void deveRetornarResumo() {
+        when(tarefaRepository.findByPrazo(LocalDate.now())).thenReturn(List.of());
+        when(tarefaRepository.countByPrazo(LocalDate.now())).thenReturn(0L);
+        when(tarefaRepository.findAtrasadas(LocalDate.now())).thenReturn(List.of());
+        when(tarefaRepository.countAtrasadas(LocalDate.now())).thenReturn(0L);
+        when(tarefaRepository.findProximas(any(), any())).thenReturn(List.of());
+        when(tarefaRepository.countProximas(any(), any())).thenReturn(0L);
+
+        ResumoTarefasDTO resultado = service.resumo();
+
+        assertNotNull(resultado);
+        assertEquals(0, resultado.getContagemHoje());
+        assertEquals(0, resultado.getContagemAtrasadas());
+        assertEquals(0, resultado.getContagemProximas());
     }
 
     private Tarefa criarTarefa(Long id, String titulo, LocalDate prazo) {

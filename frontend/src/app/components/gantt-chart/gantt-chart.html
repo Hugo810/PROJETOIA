@@ -1,0 +1,172 @@
+<div class="container">
+  <header>
+    <h1>Diagrama de Gantt</h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="abrirFormDep()">+ Dependência</button>
+      <button class="btn btn-secondary" (click)="abrirFormMarco()">+ Marco</button>
+      <button class="btn btn-secondary" (click)="anteriorMes()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="btn btn-secondary btn-today" (click)="voltarHoje()">Hoje</button>
+      <button class="btn btn-secondary" (click)="proximoMes()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  @if (loading) {
+    <p class="loading">Carregando...</p>
+  } @else if (data.tarefas.length === 0) {
+    <div class="empty-state">
+      <p>Nenhuma tarefa encontrada no período.</p>
+    </div>
+  } @else {
+    <div class="gantt-wrapper">
+      <div class="gantt-sidebar">
+        <div class="sidebar-header">Tarefa</div>
+        @for (t of data.tarefas; track t.id; let i = $index) {
+          <div class="sidebar-row">
+            <span class="status-dot" [style.background]="statusColors[t.status]"></span>
+            <div class="task-info">
+              <span class="task-name">{{ t.titulo }}</span>
+              <span class="task-meta">{{ t.responsavel || 'Sem responsável' }} • {{ t.categoria }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="gantt-scroll">
+        <div class="gantt-header" [style.width.px]="larguraGantt">
+          @for (dia of dias; track dia.getTime()) {
+            <div class="day-cell" [class.hoje]="isHoje(dia)" [class.fim-semana]="isFimDeSemana(dia)">
+              <span class="day-num">{{ dia.getDate() }}</span>
+              <span class="day-mes">{{ meses[dia.getMonth()] }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="gantt-body" [style.width.px]="larguraGantt">
+          @for (dia of dias; track dia.getTime()) {
+            <div class="grid-col" [class.hoje]="isHoje(dia)" [class.fim-semana]="isFimDeSemana(dia)"></div>
+          }
+
+          @for (t of data.tarefas; track t.id; let i = $index) {
+            <div class="bar-row">
+              <div class="bar"
+                   [style.left.px]="barraLeft(t)"
+                   [style.width.px]="barraWidth(t)"
+                   [style.background]="statusColors[t.status]"
+                   [title]="t.titulo + ' (' + t.status + ')'">
+                <span class="bar-label">{{ t.titulo }}</span>
+              </div>
+            </div>
+          }
+
+          <svg class="dep-lines" [attr.width]="larguraGantt" [attr.height]="data.tarefas.length * 38">
+            @for (dep of data.dependencias; track dep.id) {
+              @if (linhaDependencia(dep)) {
+                <line [attr.x1]="linhaDependencia(dep)!.x1" [attr.y1]="linhaDependencia(dep)!.y1"
+                      [attr.x2]="linhaDependencia(dep)!.x2" [attr.y2]="linhaDependencia(dep)!.y2"
+                      stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+              }
+            }
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    @if (data.dependencias.length > 0) {
+      <div class="deps-legend">
+        <h3>Dependências</h3>
+        @for (dep of data.dependencias; track dep.id) {
+          <div class="dep-item">
+            <span class="dep-from">{{ dep.tarefaTitulo }}</span>
+            <span class="dep-arrow">→</span>
+            <span class="dep-to">{{ dep.tarefaDependenteTitulo }}</span>
+            <span class="dep-tipo">({{ dep.tipo === 'BLOQUEIA' ? 'Bloqueia' : 'Bloqueada por' }})</span>
+            <button class="btn-icon-sm" (click)="excluirDep(dep.id)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    @if (data.marcos.length > 0) {
+      <div class="marcos-legend">
+        <h3>Marcos</h3>
+        @for (m of data.marcos; track m.id) {
+          <div class="marco-item">
+            <span class="marco-diamond">◆</span>
+            <span class="marco-nome">{{ m.nome }}</span>
+            <button class="btn-icon-sm" (click)="excluirMarco(m.id!)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
+
+@if (mostrarFormMarco) {
+  <div class="modal-overlay" (click)="fecharFormMarco()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Novo Marco</h2>
+      <div class="form-group">
+        <label>Nome *</label>
+        <input [(ngModel)]="nomeMarco" placeholder="Ex: Entrega do projeto">
+      </div>
+      <div class="form-group">
+        <label>Data *</label>
+        <input type="date" [(ngModel)]="dataMarco">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="salvarMarco()" [disabled]="!nomeMarco">Criar</button>
+        <button class="btn btn-secondary" (click)="fecharFormMarco()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (mostrarFormDep) {
+  <div class="modal-overlay" (click)="fecharFormDep()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Nova Dependência</h2>
+      <div class="form-group">
+        <label>Tarefa que depende *</label>
+        <select [(ngModel)]="depTarefaId">
+          <option [ngValue]="null" disabled>Selecione...</option>
+          @for (t of data.tarefas; track t.id) {
+            <option [ngValue]="t.id">{{ t.titulo }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tarefa bloqueada *</label>
+        <select [(ngModel)]="depDependenteId">
+          <option [ngValue]="null" disabled>Selecione...</option>
+          @for (t of data.tarefas; track t.id) {
+            <option [ngValue]="t.id">{{ t.titulo }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select [(ngModel)]="depTipo">
+          <option value="BLOQUEIA">Bloqueia</option>
+          <option value="BLOQUEADA_POR">Bloqueada por</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="salvarDep()" [disabled]="!depTarefaId || !depDependenteId">Criar</button>
+        <button class="btn btn-secondary" (click)="fecharFormDep()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

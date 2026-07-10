@@ -1,0 +1,55 @@
+<div class="comments-section">
+  <h3>Comentários <span class="count">{{ comentarios.length }}</span></h3>
+
+  @if (loading) {
+    <div class="loading">Carregando...</div>
+  }
+
+  <div class="comment-form">
+    <textarea
+      [(ngModel)]="novoComentario"
+      placeholder="Adicionar um comentário..."
+      rows="2"
+      (keydown.control.enter)="enviar()"
+    ></textarea>
+    <button class="btn btn-primary btn-sm" (click)="enviar()" [disabled]="!novoComentario.trim() || enviando">
+      {{ enviando ? 'Enviando...' : 'Enviar' }}
+    </button>
+  </div>
+
+  @if (!loading && comentarios.length === 0) {
+    <div class="empty">Nenhum comentário ainda.</div>
+  }
+
+  @for (c of comentarios; track c.id) {
+    <div class="comment">
+      <div class="comment-header">
+        <span class="avatar" [style.background]="getBadgeColor(c.autorNome || '')">{{ (c.autorNome || '?')[0] }}</span>
+        <span class="autor">{{ c.autorNome }}</span>
+        <span class="data">{{ formatarData(c.dataCriacao) }}</span>
+        @if (c.autorId === usuarioLogado) {
+          <div class="comment-actions">
+            <button class="btn-action" (click)="iniciarEdicao(c)" title="Editar">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn-action btn-delete" (click)="excluir(c)" title="Excluir">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (editandoId === c.id) {
+        <div class="edit-form">
+          <textarea [(ngModel)]="textoEditando" rows="2"></textarea>
+          <div class="edit-actions">
+            <button class="btn btn-sm btn-primary" (click)="salvarEdicao(c)">Salvar</button>
+            <button class="btn btn-sm btn-secondary" (click)="cancelarEdicao()">Cancelar</button>
+          </div>
+        </div>
+      } @else {
+        <div class="comment-text">{{ c.texto }}</div>
+      }
+    </div>
+  }
+</div>

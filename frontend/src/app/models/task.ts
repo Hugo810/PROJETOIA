@@ -6,6 +6,7 @@ export interface Tarefa {
   categoriaNome?: string;
   prazo: string;
   status: string;
+  prioridade?: string;
   dataCriacao?: string;
   dataConclusao?: string;
   responsavelId?: number;

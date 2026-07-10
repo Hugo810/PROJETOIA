@@ -1,0 +1,113 @@
+<div class="container">
+  <header>
+    <h1>Tarefas Recorrentes</h1>
+    <button class="btn btn-primary" (click)="abrirForm()">+ Nova Recorrência</button>
+  </header>
+
+  @if (loading) {
+    <p class="loading">Carregando...</p>
+  } @else if (recorrentes.length === 0) {
+    <div class="empty-state">
+      <p>Nenhuma tarefa recorrente configurada.</p>
+    </div>
+  } @else {
+    <div class="recorrentes-list">
+      @for (rec of recorrentes; track rec.id) {
+        <div class="recorrente-card" [class.inativa]="!rec.ativa" [class.expandido]="expandirId === rec.id">
+          <div class="card-main">
+            <div class="card-left">
+              <span class="recorrencia-badge">{{ recorrenciaLabels[rec.recorrencia] || rec.recorrencia }}</span>
+              <div class="card-info">
+                <span class="card-titulo">{{ rec.tarefaModeloTitulo }}</span>
+                <span class="card-meta">{{ rec.categoriaNome }} • Criado por {{ rec.criadorNome }}</span>
+              </div>
+            </div>
+
+            <div class="card-center">
+              <div class="proxima-data" (click)="toggleExpandir(rec.id!)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>{{ rec.proximaExecucao ? formatarData(rec.proximaExecucao) : '—' }}</span>
+              </div>
+            </div>
+
+            <div class="card-right">
+              <span class="status-dot" [class.ativa]="rec.ativa" [class.inativa]="!rec.ativa"></span>
+              <button class="btn-icon" (click)="toggleAtiva(rec)" [title]="rec.ativa ? 'Pausar' : 'Ativar'">
+                @if (rec.ativa) {
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                } @else {
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                }
+              </button>
+              <button class="btn-icon" (click)="pular(rec.id!)" title="Pular próxima">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+              </button>
+              <button class="btn-icon" (click)="adiar(rec.id!, 1)" title="Adiar 1 dia">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+              <button class="btn-icon" (click)="editar(rec)" title="Editar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn-icon btn-delete" (click)="excluir(rec.id!)" title="Excluir">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          @if (expandirId === rec.id && rec.proximasExecucoes) {
+            <div class="proximas-section">
+              <span class="proximas-label">Próximas ocorrências:</span>
+              <div class="proximas-datas">
+                @for (data of rec.proximasExecucoes; track data) {
+                  <span class="data-pill">{{ formatarData(data) }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (mostrarForm) {
+  <div class="modal-overlay" (click)="fecharForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>{{ editandoId ? 'Editar Recorrência' : 'Nova Recorrência' }}</h2>
+
+      <div class="form-group">
+        <label>Tarefa Modelo *</label>
+        <select [(ngModel)]="modeloSelecionado" [disabled]="!!editandoId">
+          <option value="">Selecione a tarefa...</option>
+          @for (t of tarefas; track t.id) {
+            <option [value]="t.id">{{ t.titulo }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Recorrência *</label>
+        <select [(ngModel)]="recorrenciaSelecionada">
+          <option value="DIARIA">Diária</option>
+          <option value="SEMANAL">Semanal</option>
+          <option value="QUINZENAL">Quinzenal</option>
+          <option value="MENSAL">Mensal</option>
+          <option value="BIMESTRAL">Bimestral</option>
+          <option value="PERSONALIZADA">Personalizada</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Próxima Execução *</label>
+        <input type="date" [(ngModel)]="proximaExecucao">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="salvar()" [disabled]="!modeloSelecionado || !proximaExecucao">
+          {{ editandoId ? 'Atualizar' : 'Criar' }}
+        </button>
+        <button class="btn btn-secondary" (click)="fecharForm()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

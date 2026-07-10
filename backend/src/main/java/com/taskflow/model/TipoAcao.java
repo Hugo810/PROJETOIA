@@ -1,0 +1,9 @@
+package com.taskflow.model;
+
+public enum TipoAcao {
+    CRIAR_TAREFA,
+    ENVIAR_NOTIFICACAO,
+    ATRIBUIR_RESPONSAVEL,
+    ALTERAR_PRIORIDADE,
+    ENVIAR_NOTIFICACAO_CRIADOR
+}

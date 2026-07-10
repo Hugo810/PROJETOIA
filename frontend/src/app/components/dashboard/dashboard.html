@@ -1,0 +1,121 @@
+<div class="container">
+  <header>
+    <h1>Dashboard</h1>
+  </header>
+
+  @if (loading) {
+    <p class="loading">Carregando...</p>
+  } @else if (data) {
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-number">{{ data.resumo.totalTarefas }}</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card pending">
+        <span class="stat-number">{{ data.resumo.pendentes }}</span>
+        <span class="stat-label">Pendentes</span>
+      </div>
+      <div class="stat-card running">
+        <span class="stat-number">{{ data.resumo.emExecucao }}</span>
+        <span class="stat-label">Em Execução</span>
+      </div>
+      <div class="stat-card done">
+        <span class="stat-number">{{ data.resumo.concluidas }}</span>
+        <span class="stat-label">Concluídas</span>
+      </div>
+      <div class="stat-card overdue">
+        <span class="stat-number">{{ data.resumo.atrasadas }}</span>
+        <span class="stat-label">Atrasadas</span>
+      </div>
+      <div class="stat-card week">
+        <span class="stat-number">{{ data.resumo.criadasUltimos7Dias }}</span>
+        <span class="stat-label">Criadas (7d)</span>
+      </div>
+      <div class="stat-card week-done">
+        <span class="stat-number">{{ data.resumo.concluidasUltimos7Dias }}</span>
+        <span class="stat-label">Concluídas (7d)</span>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Por Status</h3>
+        <div class="bar-chart">
+          @for (item of data.porStatus; track item.status) {
+            <div class="bar-row">
+              <span class="bar-label">{{ statusLabels[item.status] || item.status }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width]="barWidth(item.contagem, maxStatus)" [style.background]="statusColors[item.status]"></div>
+              </div>
+              <span class="bar-value">{{ item.contagem }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Por Categoria</h3>
+        <div class="bar-chart">
+          @for (item of data.porCategoria; track item.categoriaId) {
+            <div class="bar-row">
+              <span class="bar-label">{{ item.categoria }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width]="barWidth(item.contagem, maxCategoria)" style="background:#6366f1"></div>
+              </div>
+              <span class="bar-value">{{ item.contagem }}</span>
+            </div>
+          }
+          @if (data.porCategoria.length === 0) {
+            <p class="empty-chart">Nenhum dado disponível</p>
+          }
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Tendência (30 dias)</h3>
+        <div class="tendencia-chart">
+          @for (item of data.tendencia; track item.data) {
+            <div class="tendencia-col">
+              <div class="tendencia-bars">
+                <div class="tendencia-bar criadas" [style.height]="tendenciaBarHeight(item.criadas)"></div>
+                <div class="tendencia-bar concluidas" [style.height]="tendenciaBarHeight(item.concluidas)"></div>
+              </div>
+              <span class="tendencia-label">{{ item.data }}</span>
+            </div>
+          }
+          @if (data.tendencia.length === 0) {
+            <p class="empty-chart">Nenhum dado disponível</p>
+          }
+        </div>
+        @if (data.tendencia.length > 0) {
+          <div class="tendencia-legend">
+            <span class="legend-item"><span class="legend-dot criadas"></span> Criadas</span>
+            <span class="legend-item"><span class="legend-dot concluidas"></span> Concluídas</span>
+          </div>
+        }
+      </div>
+
+      <div class="chart-card wide">
+        <h3>Responsáveis</h3>
+        @if (data.porResponsavel.length > 0) {
+          <div class="responsaveis-list">
+            @for (r of data.porResponsavel; track r.responsavelId) {
+              <div class="responsavel-row">
+                <div class="resp-info">
+                  <span class="resp-nome">{{ r.responsavel }}</span>
+                  <span class="resp-count">{{ r.concluidas }}/{{ r.total }} concluídas</span>
+                </div>
+                <div class="resp-bar-track">
+                  <div class="resp-bar-fill" [style.width]="r.taxaConclusao + '%'" [style.background]="r.taxaConclusao >= 70 ? '#22c55e' : r.taxaConclusao >= 40 ? '#f59e0b' : '#ef4444'"></div>
+                </div>
+                <span class="resp-percent">{{ r.taxaConclusao }}%</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-chart">Nenhum dado disponível</p>
+        }
+      </div>
+    </div>
+  }
+</div>

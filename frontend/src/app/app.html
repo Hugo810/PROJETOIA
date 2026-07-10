@@ -3,11 +3,19 @@
     <nav class="topbar">
       <div class="topbar-left">
         <a class="brand" routerLink="/">TaskFlow</a>
+        <a class="nav-link" routerLink="/hoje">Hoje</a>
         <a class="nav-link" routerLink="/">Tarefas</a>
         <a class="nav-link" routerLink="/categorias">Categorias</a>
+        <a class="nav-link" routerLink="/recorrentes">Recorrentes</a>
+        <a class="nav-link" routerLink="/automacoes">Automações</a>
+        <a class="nav-link" routerLink="/dashboard">Dashboard</a>
+        <a class="nav-link" routerLink="/gantt">Gantt</a>
+        <a class="nav-link" routerLink="/projetos">Projetos</a>
+        <a class="nav-link" routerLink="/exportar-importar">Exportar</a>
         <a class="nav-link" routerLink="/usuarios">Usuários</a>
       </div>
       <div class="topbar-right">
+        <app-notifications></app-notifications>
         <span class="user-badge">{{ nome }} ({{ roleLabel }})</span>
         <button class="btn-logout" (click)="logout()">Sair</button>
       </div>

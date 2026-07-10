@@ -10,13 +10,16 @@ export class TaskService {
 
   constructor(private http: HttpClient) {}
 
-  listarTarefas(status?: string, categoriaId?: number, responsavelId?: number, pagina = 0, tamanho = 10): Observable<any> {
+  listarTarefas(status?: string, categoriaId?: number, responsavelId?: number,
+                 prioridade?: string, busca?: string, pagina = 0, tamanho = 10): Observable<any> {
     let params = new HttpParams()
       .set('pagina', pagina.toString())
       .set('tamanho', tamanho.toString());
     if (status) params = params.set('status', status);
     if (categoriaId) params = params.set('categoriaId', categoriaId.toString());
     if (responsavelId) params = params.set('responsavelId', responsavelId.toString());
+    if (prioridade) params = params.set('prioridade', prioridade);
+    if (busca) params = params.set('busca', busca);
     return this.http.get<any>(`${this.baseUrl}/tarefas`, { params });
   }
 
@@ -51,4 +54,35 @@ export class TaskService {
   listarCategorias(): Observable<Categoria[]> {
     return this.http.get<Categoria[]>(`${this.baseUrl}/categorias`);
   }
+
+  tarefasHoje(): Observable<Tarefa[]> {
+    return this.http.get<Tarefa[]>(`${this.baseUrl}/tarefas/hoje`);
+  }
+
+  tarefasSemana(): Observable<Tarefa[]> {
+    return this.http.get<Tarefa[]>(`${this.baseUrl}/tarefas/semana`);
+  }
+
+  tarefasAtrasadas(): Observable<Tarefa[]> {
+    return this.http.get<Tarefa[]>(`${this.baseUrl}/tarefas/atrasadas`);
+  }
+
+  tarefasProximas(): Observable<Tarefa[]> {
+    return this.http.get<Tarefa[]>(`${this.baseUrl}/tarefas/proximas`);
+  }
+
+  resumo(): Observable<ResumoTarefas> {
+    return this.http.get<ResumoTarefas>(`${this.baseUrl}/tarefas/resumo`);
+  }
+}
+
+export interface ResumoTarefas {
+  hoje: Tarefa[];
+  semana: Tarefa[];
+  atrasadas: Tarefa[];
+  proximas: Tarefa[];
+  contagemHoje: number;
+  contagemSemana: number;
+  contagemAtrasadas: number;
+  contagemProximas: number;
 }

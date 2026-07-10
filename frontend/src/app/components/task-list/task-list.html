@@ -28,7 +28,16 @@
       }
     </select>
 
-    <button class="btn btn-secondary" (click)="limparFiltros()">Limpar</button>
+    <select [(ngModel)]="filtroPrioridade" (change)="filtrar()">
+      <option value="">Todas as prioridades</option>
+      <option value="ALTA">Alta</option>
+      <option value="MEDIA">Média</option>
+      <option value="BAIXA">Baixa</option>
+    </select>
+
+    @if (temFiltroAtivo) {
+      <button class="btn btn-secondary" (click)="limparFiltros()">Limpar</button>
+    }
     <a routerLink="/nova" class="btn btn-primary">Nova Tarefa</a>
   </section>
 
@@ -94,6 +103,9 @@
               />
               <span class="checkmark"></span>
             </label>
+            <span class="prioridade-badge {{ getPrioridadeClass(tarefa.prioridade) }}" title="Prioridade: {{ getPrioridadeLabel(tarefa.prioridade) }}">
+              {{ getPrioridadeLabel(tarefa.prioridade) }}
+            </span>
             <span class="categoria-badge" [class.badge-urgente]="tarefa.categoriaNome === 'URGENTE'" title="Categoria: {{ tarefa.categoriaNome }}">
               {{ tarefa.categoriaNome }}
             </span>
@@ -184,7 +196,12 @@
 </div>
 
 @if (showDeleteModal) {
-  <app-confirm-modal (confirm)="excluir()" (cancel)="cancelarExclusao()" />
+  <app-confirm-modal
+    [message]="deleteMultiple ? 'Excluir ' + selectedIds.size + ' tarefa(s) selecionada(s)?' : 'Excluir esta tarefa?'"
+    [confirmText]="'Excluir'"
+    (confirm)="excluir()"
+    (cancel)="cancelarExclusao()"
+  />
 }
 
 @if (showDistribuirModal) {

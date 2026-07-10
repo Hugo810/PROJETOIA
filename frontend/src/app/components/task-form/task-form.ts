@@ -7,11 +7,14 @@ import { AuthService } from '../../services/auth.service';
 import { CacheService } from '../../services/cache.service';
 import { Categoria } from '../../models/category';
 import { Usuario } from '../../models/user';
+import { TaskComments } from '../task-comments/task-comments';
+import { TaskHistory } from '../task-history/task-history';
+import { TaskTimer } from '../task-timer/task-timer';
 
 @Component({
   selector: 'app-task-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TaskComments, TaskHistory, TaskTimer],
   templateUrl: './task-form.html',
   styleUrl: './task-form.css'
 })
@@ -20,7 +23,7 @@ export class TaskForm implements OnInit {
   usuarios: Usuario[] = [];
   form: FormGroup;
   editando = false;
-  private tarefaId?: number;
+  tarefaId?: number;
   today: string = new Date().toISOString().split('T')[0];
 
   constructor(
@@ -36,6 +39,7 @@ export class TaskForm implements OnInit {
       descricao: [''],
       categoriaId: [0, Validators.required],
       prazo: ['', Validators.required],
+      prioridade: ['MEDIA', Validators.required],
       responsavelId: ['']
     });
   }
@@ -61,6 +65,7 @@ export class TaskForm implements OnInit {
           descricao: data.descricao,
           categoriaId: data.categoriaId,
           prazo: data.prazo,
+          prioridade: data.prioridade || 'MEDIA',
           responsavelId: data.responsavelId || ''
         });
       });
@@ -92,7 +97,11 @@ export class TaskForm implements OnInit {
   getError(field: string): string {
     const control = this.form.get(field);
     if (control?.touched && control.invalid) {
-      if (control.hasError('required')) return `${field === 'prazo' ? 'Prazo' : 'Título'} é obrigatório.`;
+      if (control.hasError('required')) {
+        if (field === 'prazo') return 'Prazo é obrigatório.';
+        if (field === 'prioridade') return 'Prioridade é obrigatória.';
+        return 'Título é obrigatório.';
+      }
       if (control.hasError('maxlength')) return 'Máximo de 200 caracteres.';
     }
     if (field === 'prazo' && control?.value && control.value < this.today) {

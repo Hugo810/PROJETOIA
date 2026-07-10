@@ -1,0 +1,75 @@
+<div class="container">
+  <header>
+    <h1>Projetos</h1>
+    <button class="btn btn-primary" (click)="abrirForm()">+ Novo Projeto</button>
+  </header>
+
+  @if (loading) {
+    <p class="loading">Carregando...</p>
+  } @else if (projetos.length === 0) {
+    <div class="empty-state"><p>Nenhum projeto encontrado.</p></div>
+  } @else {
+    <div class="projetos-grid">
+      @for (p of projetos; track p.id) {
+        <div class="projeto-card">
+          <div class="card-header">
+            <span class="status-badge" [style.background]="statusColors[p.status]">{{ statusLabels[p.status] || p.status }}</span>
+            <button class="btn-icon btn-delete" (click)="excluir(p.id!)" title="Excluir">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <h3 class="card-title">{{ p.nome }}</h3>
+          @if (p.descricao) {
+            <p class="card-desc">{{ p.descricao }}</p>
+          }
+          <div class="card-dates">
+            <span>{{ formatarData(p.dataInicio) }} → {{ formatarData(p.dataFim) }}</span>
+          </div>
+          @if (p.responsavelNome) {
+            <span class="card-resp">👤 {{ p.responsavelNome }}</span>
+          }
+          <div class="card-progress">
+            <div class="progress-header">
+              <span>Progresso</span>
+              <span>{{ p.metasConcluidas || 0 }}/{{ p.totalMetas || 0 }} metas</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" [style.width]="(p.progressoGeral || 0) + '%'"></div>
+            </div>
+          </div>
+          <a [routerLink]="['/projetos', p.id]" class="card-link">Ver detalhes →</a>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (mostrarForm) {
+  <div class="modal-overlay" (click)="fecharForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>{{ editandoId ? 'Editar Projeto' : 'Novo Projeto' }}</h2>
+      <div class="form-group">
+        <label>Nome *</label>
+        <input [(ngModel)]="nome" placeholder="Nome do projeto">
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea [(ngModel)]="descricao" rows="2"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data Início</label>
+          <input type="date" [(ngModel)]="dataInicio">
+        </div>
+        <div class="form-group">
+          <label>Data Fim</label>
+          <input type="date" [(ngModel)]="dataFim">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="salvar()" [disabled]="!nome">{{ editandoId ? 'Atualizar' : 'Criar' }}</button>
+        <button class="btn btn-secondary" (click)="fecharForm()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

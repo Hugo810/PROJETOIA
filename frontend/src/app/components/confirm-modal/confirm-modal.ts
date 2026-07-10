@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -9,7 +9,10 @@ import { CommonModule } from '@angular/common';
   styleUrl: './confirm-modal.css'
 })
 export class ConfirmModal {
+  @Input() message = 'Confirmar ação?';
+  @Input() confirmText = 'Confirmar';
+  @Input() cancelText = 'Cancelar';
+  @Input() dangerMode = true;
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
-  message = 'Confirmar ação?';
 }

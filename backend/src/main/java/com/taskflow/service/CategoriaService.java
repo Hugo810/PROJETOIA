@@ -1,10 +1,13 @@
 package com.taskflow.service;
 
+import com.taskflow.config.CategoriaNotFoundException;
+import com.taskflow.config.RegraNegocioException;
 import com.taskflow.dto.CategoriaDTO;
 import com.taskflow.model.Categoria;
 import com.taskflow.repository.CategoriaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,12 +29,12 @@ public class CategoriaService {
 
     public CategoriaDTO buscarPorId(Long id) {
         return toDTO(repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria nao encontrada: " + id)));
+                .orElseThrow(() -> new CategoriaNotFoundException(id)));
     }
 
     public CategoriaDTO criar(CategoriaDTO dto) {
         if (repository.existsByNomeIgnoreCase(dto.getNome())) {
-            throw new RuntimeException("Categoria ja existe: " + dto.getNome());
+            throw new RegraNegocioException("Categoria já existe: " + dto.getNome());
         }
         Categoria c = new Categoria(null, dto.getNome());
         CategoriaDTO saved = toDTO(repository.save(c));
@@ -41,7 +44,7 @@ public class CategoriaService {
 
     public CategoriaDTO atualizar(Long id, CategoriaDTO dto) {
         Categoria c = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria nao encontrada: " + id));
+                .orElseThrow(() -> new CategoriaNotFoundException(id));
         c.setNome(dto.getNome());
         CategoriaDTO saved = toDTO(repository.save(c));
         log.info("Categoria atualizada: id={}, nome={}", id, dto.getNome());
@@ -50,15 +53,19 @@ public class CategoriaService {
 
     public void excluir(Long id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Categoria nao encontrada: " + id);
+            throw new CategoriaNotFoundException(id);
         }
-        repository.deleteById(id);
-        log.info("Categoria excluida: id={}", id);
+        try {
+            repository.deleteById(id);
+            log.info("Categoria excluida: id={}", id);
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegraNegocioException("Não é possível excluir categoria com tarefas vinculadas.");
+        }
     }
 
     Categoria findEntityById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria nao encontrada: " + id));
+                .orElseThrow(() -> new CategoriaNotFoundException(id));
     }
 
     private CategoriaDTO toDTO(Categoria c) {

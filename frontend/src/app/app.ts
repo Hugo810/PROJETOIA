@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { Notifications } from './components/notifications/notifications';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterModule],
+  imports: [RouterOutlet, RouterModule, Notifications],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -28,18 +29,18 @@ export class App implements OnInit {
         : 'Executor';
     }
 
-    const isLoginPage = window.location.pathname === '/login';
+    const isLoginPage = this.router.url === '/login';
     if (!this.isLogado && !isLoginPage) {
       this.auth.logout();
-      window.location.href = '/login';
+      this.router.navigate(['/login']);
     }
     if (this.isLogado && isLoginPage) {
-      window.location.href = '/';
+      this.router.navigate(['/']);
     }
   }
 
   logout() {
     this.auth.logout();
-    window.location.href = '/login';
+    this.router.navigate(['/login']);
   }
 }

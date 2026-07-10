@@ -36,6 +36,10 @@ public class Tarefa {
     @Column(nullable = false, length = 20)
     private TarefaStatus status = TarefaStatus.PENDENTE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Prioridade prioridade = Prioridade.MEDIA;
+
     @Column(name = "data_criacao", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 
@@ -68,6 +72,8 @@ public class Tarefa {
     public void setPrazo(LocalDate prazo) { this.prazo = prazo; }
     public TarefaStatus getStatus() { return status; }
     public void setStatus(TarefaStatus status) { this.status = status; }
+    public Prioridade getPrioridade() { return prioridade; }
+    public void setPrioridade(Prioridade prioridade) { this.prioridade = prioridade; }
     public LocalDateTime getDataCriacao() { return dataCriacao; }
     public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
     public LocalDateTime getDataConclusao() { return dataConclusao; }

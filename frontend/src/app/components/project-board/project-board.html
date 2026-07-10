@@ -1,0 +1,105 @@
+<div class="container">
+  @if (loading) {
+    <p class="loading">Carregando...</p>
+  } @else if (projeto) {
+    <header class="board-header">
+      <button class="btn-back" (click)="voltar()">← Voltar</button>
+      <h1>{{ projeto.nome }}</h1>
+      <span class="status-badge" [style.background]="statusColors[projeto.status]">{{ statusLabels[projeto.status] || projeto.status }}</span>
+    </header>
+
+    @if (projeto.descricao) {
+      <p class="projeto-desc">{{ projeto.descricao }}</p>
+    }
+
+    <div class="projeto-meta">
+      <span>{{ formatarData(projeto.dataInicio) }} → {{ formatarData(projeto.dataFim) }}</span>
+      @if (projeto.responsavelNome) {
+        <span>👤 {{ projeto.responsavelNome }}</span>
+      }
+      <span>{{ projeto.metasConcluidas || 0 }}/{{ projeto.totalMetas || 0 }} metas</span>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width]="(projeto.progressoGeral || 0) + '%'"></div>
+    </div>
+
+    <section class="metas-section">
+      <div class="metas-header">
+        <h2>Metas</h2>
+        <button class="btn btn-primary" (click)="abrirFormMeta()">+ Nova Meta</button>
+      </div>
+
+      @if (metas.length === 0) {
+        <div class="empty-state"><p>Nenhuma meta registrada.</p></div>
+      } @else {
+        @for (m of metas; track m.id) {
+          <div class="meta-card">
+            <div class="meta-header">
+              <span class="status-badge" [style.background]="statusColors[m.status]">{{ statusLabels[m.status] || m.status }}</span>
+              <span class="meta-progresso">{{ m.progresso }}%</span>
+            </div>
+            <h3>{{ m.titulo }}</h3>
+            @if (m.descricao) {
+              <p class="meta-desc">{{ m.descricao }}</p>
+            }
+            <div class="meta-dates">
+              {{ formatarData(m.dataInicio) }} → {{ formatarData(m.dataFim) }}
+            </div>
+            <div class="meta-progress-bar">
+              <div class="meta-progress-fill" [style.width]="m.progresso + '%'"></div>
+            </div>
+            <div class="meta-actions">
+              <button class="btn btn-sm" (click)="editarMeta(m)">Editar</button>
+              <button class="btn btn-sm btn-danger" (click)="excluirMeta(m.id!)">Excluir</button>
+            </div>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>
+
+@if (mostrarFormMeta) {
+  <div class="modal-overlay" (click)="fecharFormMeta()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>{{ editandoMetaId ? 'Editar Meta' : 'Nova Meta' }}</h2>
+      <div class="form-group">
+        <label>Título *</label>
+        <input [(ngModel)]="metaTitulo" placeholder="Título da meta">
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea [(ngModel)]="metaDescricao" rows="2"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data Início</label>
+          <input type="date" [(ngModel)]="metaInicio">
+        </div>
+        <div class="form-group">
+          <label>Data Fim</label>
+          <input type="date" [(ngModel)]="metaFim">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select [(ngModel)]="metaStatus">
+            @for (s of statusOptions; track s) {
+              <option [value]="s">{{ statusLabels[s] || s }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Progresso (%)</label>
+          <input type="number" [(ngModel)]="metaProgresso" min="0" max="100">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="salvarMeta()" [disabled]="!metaTitulo">{{ editandoMetaId ? 'Atualizar' : 'Criar' }}</button>
+        <button class="btn btn-secondary" (click)="fecharFormMeta()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

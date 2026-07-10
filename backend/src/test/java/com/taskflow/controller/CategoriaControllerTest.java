@@ -1,5 +1,6 @@
 package com.taskflow.controller;
 
+import com.taskflow.config.CategoriaNotFoundException;
 import com.taskflow.dto.CategoriaDTO;
 import com.taskflow.service.CategoriaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,10 +55,10 @@ class CategoriaControllerTest {
 
     @Test
     void deveRetornar404QuandoCategoriaNaoEncontrada() throws Exception {
-        when(service.buscarPorId(99L)).thenThrow(new RuntimeException("Categoria não encontrada: 99"));
+        when(service.buscarPorId(99L)).thenThrow(new CategoriaNotFoundException(99L));
 
         mockMvc.perform(get("/api/categorias/99"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.erro").value("Categoria não encontrada: 99"));
     }
 

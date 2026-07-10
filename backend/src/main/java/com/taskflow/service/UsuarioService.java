@@ -1,6 +1,8 @@
 package com.taskflow.service;
 
 import com.taskflow.config.AccessDeniedException;
+import com.taskflow.config.UsuarioNotFoundException;
+import com.taskflow.config.RegraNegocioException;
 import com.taskflow.dto.LoginRequest;
 import com.taskflow.dto.UsuarioDTO;
 import com.taskflow.model.Usuario;
@@ -8,7 +10,6 @@ import com.taskflow.model.UsuarioRole;
 import com.taskflow.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,10 +26,10 @@ public class UsuarioService {
     }
 
     public UsuarioDTO login(LoginRequest req) {
-        Usuario user = repository.findByEmail(req.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email ou senha invalidos"));
+        Usuario user = repository.findByEmailIgnoreCase(req.getEmail())
+                .orElseThrow(() -> new RegraNegocioException("Email ou senha inválidos"));
         if (!user.getSenha().equals(req.getSenha())) {
-            throw new RuntimeException("Email ou senha invalidos");
+            throw new RegraNegocioException("Email ou senha inválidos");
         }
         log.info("Usuario logado: id={}, email={}", user.getId(), user.getEmail());
         return toDTO(user);
@@ -40,7 +41,7 @@ public class UsuarioService {
 
     public UsuarioDTO buscarPorId(Long id) {
         return toDTO(repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario nao encontrado: " + id)));
+                .orElseThrow(() -> new UsuarioNotFoundException(id)));
     }
 
     public UsuarioDTO criar(UsuarioDTO dto) {
@@ -52,7 +53,7 @@ public class UsuarioService {
 
     public UsuarioDTO atualizar(Long id, UsuarioDTO dto) {
         Usuario u = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario nao encontrado: " + id));
+                .orElseThrow(() -> new UsuarioNotFoundException(id));
         u.setNome(dto.getNome());
         u.setEmail(dto.getEmail());
         if (dto.getRole() != null) u.setRole(dto.getRole());
@@ -63,7 +64,7 @@ public class UsuarioService {
 
     public void excluir(Long id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Usuario nao encontrado: " + id);
+            throw new UsuarioNotFoundException(id);
         }
         repository.deleteById(id);
         log.info("Usuario excluido: id={}", id);
@@ -71,7 +72,7 @@ public class UsuarioService {
 
     public Usuario findEntityById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario nao encontrado: " + id));
+                .orElseThrow(() -> new UsuarioNotFoundException(id));
     }
 
     public void validarRole(Long usuarioId, UsuarioRole roleMinima) {
@@ -79,7 +80,7 @@ public class UsuarioService {
         if (u.getRole() == UsuarioRole.ADMIN) return;
         if (u.getRole() == UsuarioRole.DISTRIBUIDOR && roleMinima == UsuarioRole.DISTRIBUIDOR) return;
         if (u.getRole() == roleMinima) return;
-        throw new AccessDeniedException("Acesso negado: permissao insuficiente");
+        throw new AccessDeniedException("Acesso negado: permissão insuficiente");
     }
 
     private UsuarioDTO toDTO(Usuario u) {

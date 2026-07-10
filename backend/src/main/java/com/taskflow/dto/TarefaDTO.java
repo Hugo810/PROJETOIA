@@ -26,6 +26,8 @@ public class TarefaDTO {
 
     private String status = "PENDENTE";
 
+    private String prioridade = "MEDIA";
+
     private LocalDateTime dataCriacao;
 
     private LocalDateTime dataConclusao;
@@ -52,6 +54,8 @@ public class TarefaDTO {
     public void setPrazo(LocalDate prazo) { this.prazo = prazo; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getPrioridade() { return prioridade; }
+    public void setPrioridade(String prioridade) { this.prioridade = prioridade; }
     public LocalDateTime getDataCriacao() { return dataCriacao; }
     public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
     public LocalDateTime getDataConclusao() { return dataConclusao; }

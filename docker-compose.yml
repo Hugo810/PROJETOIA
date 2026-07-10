@@ -1,22 +1,29 @@
 version: '3.8'
 
 services:
-  oracle:
-    image: gvenzl/oracle-free:21
-    container_name: taskflow-oracle
+  postgres:
+    image: postgres:17-alpine
+    container_name: taskflow-postgres
     environment:
-      ORACLE_PASSWORD: taskflow
-      APP_USER: taskflow
-      APP_USER_PASSWORD: taskflow
+      POSTGRES_DB: datatarefas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: '123456'
     ports:
-      - "1521:1521"
+      - "5432:5432"
     volumes:
-      - oracle_data:/opt/oracle/oradata
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/db/migration:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "sqlplus", "-L", "taskflow/taskflow@//localhost:1521/FREE"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
-  oracle_data:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: taskflow-network

@@ -1,0 +1,73 @@
+<div class="timer-section">
+  <div class="timer-header">
+    <h3>Controle de Tempo</h3>
+    <span class="total-badge">Total: {{ formatarDuracao(totalMinutos) }}</span>
+  </div>
+
+  <div class="timer-controls">
+    @if (!timerRodando) {
+      <button class="btn-timer btn-start" (click)="iniciar()" title="Iniciar timer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Iniciar Timer
+      </button>
+    } @else {
+      <div class="timer-running">
+        <span class="cronometro">{{ cronometroFormatado }}</span>
+        <button class="btn-timer btn-stop" (click)="parar()" title="Parar timer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          Parar
+        </button>
+      </div>
+    }
+    <button class="btn-timer btn-manual" (click)="abrirModalManual()" title="Registro manual">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Manual
+    </button>
+  </div>
+
+  @if (registros.length > 0) {
+    <div class="registros-list">
+      @for (r of registros; track r.id) {
+        <div class="registro-item" [class.em-andamento]="r.emAndamento">
+          <div class="registro-left">
+            @if (r.emAndamento) {
+              <span class="dot-pulse"></span>
+            }
+            <div class="registro-info">
+              <span class="registro-duracao">{{ r.duracaoMinutos != null ? formatarDuracao(r.duracaoMinutos) : 'Em andamento...' }}</span>
+              <span class="registro-meta">{{ r.usuarioNome }} {{ r.manual ? '(manual)' : '' }}</span>
+            </div>
+          </div>
+          <div class="registro-right">
+            <span class="registro-data">{{ formatarData(r.inicio) }}</span>
+            @if (!r.emAndamento && r.usuarioId === usuarioId) {
+              <button class="btn-delete" (click)="excluir(r)" title="Excluir">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (mostrarModal) {
+  <div class="modal-overlay" (click)="fecharModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Registro Manual de Tempo</h2>
+      <div class="form-group">
+        <label for="duracao">Duração (minutos) *</label>
+        <input id="duracao" type="number" [(ngModel)]="duracaoManual" min="1" placeholder="Ex: 60">
+      </div>
+      <div class="form-group">
+        <label for="descricao">Descrição</label>
+        <input id="descricao" [(ngModel)]="descricaoManual" placeholder="O que você fez?">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-primary" (click)="registrarManual()" [disabled]="!duracaoManual || duracaoManual <= 0">Registrar</button>
+        <button class="btn-modal btn-secondary" (click)="fecharModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

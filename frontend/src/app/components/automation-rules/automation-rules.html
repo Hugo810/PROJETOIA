@@ -1,0 +1,174 @@
+<div class="container">
+  <header>
+    <h1>Automações</h1>
+    <button class="btn btn-primary" (click)="abrirForm()">+ Nova Regra</button>
+  </header>
+
+  @if (loading) {
+    <p class="loading">Carregando...</p>
+  } @else if (regras.length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+      </div>
+      <p>Nenhuma regra de automação configurada.</p>
+      <p class="empty-hint">Crie regras SE/ENTÃO para automatizar suas tarefas.</p>
+    </div>
+  } @else {
+    <div class="regras-list">
+      @for (regra of regras; track regra.id) {
+        <div class="regra-card" [class.inativa]="!regra.ativa">
+          <div class="card-top">
+            <div class="card-info">
+              <span class="regra-nome">{{ regra.nome }}</span>
+              <span class="regra-meta">{{ regra.criadorNome }}</span>
+            </div>
+            <div class="card-actions">
+              <span class="status-dot" [class.ativa]="regra.ativa"></span>
+              <button class="btn-icon" (click)="toggleAtiva(regra)" [title]="regra.ativa ? 'Desativar' : 'Ativar'">
+                @if (regra.ativa) {
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                } @else {
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                }
+              </button>
+              <button class="btn-icon btn-delete" (click)="excluir(regra.id!)" title="Excluir">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="rule-flow">
+            <div class="flow-block condition">
+              <span class="flow-label">SE</span>
+              <span class="flow-text">{{ getLabelCondicao(parseCondicao(regra.condicao).tipo) }}</span>
+              @if (parseCondicao(regra.condicao).valor !== undefined) {
+                <span class="flow-value">{{ parseCondicao(regra.condicao).valor }}</span>
+              }
+            </div>
+            <div class="flow-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4361ee" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+            <div class="flow-block action">
+              <span class="flow-label">ENTÃO</span>
+              <span class="flow-text">{{ getLabelAcao(parseAcao(regra.acao).tipo) }}</span>
+              @if (parseAcao(regra.acao).dados?.titulo) {
+                <span class="flow-value">"{{ parseAcao(regra.acao).dados.titulo }}"</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (mostrarForm) {
+  <div class="modal-overlay" (click)="fecharForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>{{ editandoId ? 'Editar Regra' : 'Nova Regra de Automação' }}</h2>
+
+      <div class="form-group">
+        <label>Nome da Regra *</label>
+        <input [(ngModel)]="nome" placeholder="Ex: Ao concluir, criar follow-up">
+      </div>
+
+      <div class="form-section">
+        <h3>Condição (SE)</h3>
+        <div class="form-group">
+          <label>Quando...</label>
+          <select [(ngModel)]="condicaoTipo">
+            @for (c of condicoes; track c.valor) {
+              <option [value]="c.valor">{{ c.label }}</option>
+            }
+          </select>
+        </div>
+
+        @if (condicaoTipo === 'STATUS_MUDOU') {
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="condicaoValor">
+              @for (s of statusOpcoes; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </div>
+        }
+        @if (condicaoTipo === 'CATEGORIA_IGUAL') {
+          <div class="form-group">
+            <label>ID da Categoria</label>
+            <input type="number" [(ngModel)]="condicaoValor" placeholder="Ex: 1">
+          </div>
+        }
+      </div>
+
+      <div class="form-section">
+        <h3>Ação (ENTÃO)</h3>
+        <div class="form-group">
+          <label>Executar...</label>
+          <select [(ngModel)]="acaoTipo">
+            @for (a of acoes; track a.valor) {
+              <option [value]="a.valor">{{ a.label }}</option>
+            }
+          </select>
+        </div>
+
+        @if (acaoTipo === 'CRIAR_TAREFA') {
+          <div class="form-group">
+            <label>Título da nova tarefa *</label>
+            <input [(ngModel)]="novaTarefaTitulo" placeholder="Título">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Dias para prazo</label>
+              <input type="number" [(ngModel)]="novaTarefaDias" min="1">
+            </div>
+            <div class="form-group">
+              <label>Prioridade</label>
+              <select [(ngModel)]="novaTarefaPrioridade">
+                @for (p of prioridadeOpcoes; track p) {
+                  <option [value]="p">{{ p }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        }
+        @if (acaoTipo === 'ENVIAR_NOTIFICACAO' || acaoTipo === 'ENVIAR_NOTIFICACAO_CRIADOR') {
+          <div class="form-group">
+            <label>Mensagem</label>
+            <input [(ngModel)]="notificacaoMensagem" placeholder="Mensagem da notificação">
+          </div>
+          @if (acaoTipo === 'ENVIAR_NOTIFICACAO') {
+            <div class="form-group">
+              <label>ID do Usuário</label>
+              <input type="number" [(ngModel)]="notificacaoUsuarioId" min="1">
+            </div>
+          }
+        }
+        @if (acaoTipo === 'ATRIBUIR_RESPONSAVEL') {
+          <div class="form-group">
+            <label>ID do Responsável</label>
+            <input type="number" [(ngModel)]="notificacaoUsuarioId" min="1">
+          </div>
+        }
+        @if (acaoTipo === 'ALTERAR_PRIORIDADE') {
+          <div class="form-group">
+            <label>Nova Prioridade</label>
+            <select [(ngModel)]="prioridadeNova">
+              @for (p of prioridadeOpcoes; track p) {
+                <option [value]="p">{{ p }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="salvar()" [disabled]="!nome">
+          {{ editandoId ? 'Atualizar' : 'Criar' }}
+        </button>
+        <button class="btn btn-secondary" (click)="fecharForm()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}
